@@ -130,3 +130,9 @@ dmypy.json
 
 **/.DS_Store
 **/settings.json
+**/slprj
+**/*ert_rtw
+**/*.bin
+**/*.elf
+**/*.autosave
+**/*.slxc
