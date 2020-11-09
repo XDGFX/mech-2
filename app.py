@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""
+The main control file for all logic functions.
+Mechatronics 2
+
+Callum Morrison, 2020
+"""
 
 import socket
 import logging
