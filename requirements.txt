@@ -1,6 +1,9 @@
 numpy==1.19.2
 opencv-contrib-python==4.4.0.44
-opencv-python==4.4.0.44
 pycodestyle==2.6.0
 toml==0.10.1
 autopep8==1.5.4
+notebook==6.1.4
+Pillow==8.0.1
+matplotlib==3.3.2
+pandas==1.1.4
