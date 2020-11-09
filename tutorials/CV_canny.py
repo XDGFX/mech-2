@@ -14,10 +14,14 @@ import time
 import cv2
 import cv2.aruco as aruco
 import numpy as np
+import requests
+
+
+url = "http://192.168.0.128:8080/shot.jpg"
 
 # Select the first camera (0) that is connected to the machine
 # in Laptops should be the build-in camera
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 # Set the width and heigth of the camera to 640x480
 cap.set(3, 640)
@@ -46,8 +50,12 @@ while(True):
     # # Start the performance clock
     # start = time.perf_counter()
 
-    # Capture current frame from the camera
-    ret, frame = cap.read()
+    # # Capture current frame from the camera
+    # ret, frame = cap.read()
+
+    resp = requests.get(url, stream=True).raw
+    frame = np.asarray(bytearray(resp.read()), dtype="uint8")
+    frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
 
     # Convert the image from the camera to Gray scale
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
