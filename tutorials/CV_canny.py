@@ -15,25 +15,20 @@ import cv2
 import cv2.aruco as aruco
 import numpy as np
 import requests
+import logging
 
+
+log = logging.getLogger(__name__)
 
 url = "http://192.168.0.128:8080/shot.jpg"
 
-# Select the first camera (0) that is connected to the machine
-# in Laptops should be the build-in camera
-cap = cv2.VideoCapture(1)
-
-# Set the width and heigth of the camera to 640x480
-cap.set(3, 640)
-cap.set(4, 480)
+log.info(f"Connecting to camera at url: {url}")
 
 # Create two opencv named windows
 cv2.namedWindow("frame-image", cv2.WINDOW_AUTOSIZE)
-cv2.namedWindow("gray-image", cv2.WINDOW_AUTOSIZE)
 
-# Position the windows next to eachother
-cv2.moveWindow("frame-image", 0, 100)
-cv2.moveWindow("gray-image", 640, 100)
+# # Position the windows next to eachother
+# cv2.moveWindow("frame-image", 0, 100)
 
 # Read and store calibration information
 Camera = np.load(os.path.join("tutorials", "Sample_Calibration.npz"))
@@ -42,10 +37,10 @@ dist_coef = Camera['dist_coef']  # Distortion coefficients from the camera
 
 # Load the ArUco Dictionary Dictionary 4x4_50 and set the detection parameters
 aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
-pa = aruco.DetectorParameters_create()
+# pa = aruco.DetectorParameters_create()
 
 # Execute this continuously
-while(True):
+while True:
 
     # # Start the performance clock
     # start = time.perf_counter()
@@ -54,6 +49,12 @@ while(True):
     # ret, frame = cap.read()
 
     resp = requests.get(url, stream=True).raw
+
+    if resp.status_code != 200:
+        log.error("Unexpected error code when connecting to camera!")
+        log.error(resp.status_code)
+        raise SystemError
+
     frame = np.asarray(bytearray(resp.read()), dtype="uint8")
     frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
 
