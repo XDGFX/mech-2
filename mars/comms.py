@@ -1,3 +1,10 @@
+"""
+The communications file to send and recieve data from embedded robots
+Mechatronics 2
+
+Alberto Guerra Martinuzzi, 2020
+"""
+
 import paho.mqtt.client as mqtt  # This is the library to do the MQTT communications
 import time  # This is the library that will allow us to use the sleep function
 
@@ -27,6 +34,17 @@ def on_message(client, userdata, msg):
     recieve_time = time.strftime("%Y/%m/%d, %H:%M:%S |", time.localtime())
     print(recieve_time + " In topic: " + msg.topic +
           " | Value: " + str(int(msg.payload.rstrip(b'\x00'))))
+
+# Function to merge 2 integer values in one combined message string
+# This lowers the resolution of the values to 16bit resolution but packs 2 values in one message
+
+
+def merge_integers(high_word, low_word):
+    # mask for signed 32bit integers to get a signed 16bit integer
+    bitmask = 0x0000FFFF
+    # shifts the high_word 16 bits and takes only the lower 16bits from the low_word
+    msg = str((high_word << 16) + (low_word & bitmask))
+    return msg
 
 
 # Create the mqtt client object
@@ -65,9 +83,9 @@ topics = {
 # Start the client to enable the above events to happen
 client.loop_start()
 
-# Pick a value
-val = 254
-
+value1 = 234
+value2 = -578
+message = merge_integers(value1, value2)
 # Send (Publish) the value continuously
 while(1):
 
@@ -77,7 +95,7 @@ while(1):
         time.sleep(1)
 
         # Publish the value (integer) as a string. All messages are strings
-        client.publish(topics["alien"][3], str(val))
+        client.publish(topics["alien"][3], message)
 
         # Plot in the terminal what we just did
         # print("%s %d" % (topics["alien"][3], val))
