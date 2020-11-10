@@ -13,7 +13,9 @@ import cv2.aruco as aruco
 import numpy as np
 import requests
 
-from mars import logs
+from mars import logs, coords
+
+coords = coords.coords()
 
 log = logs.create_log(__name__)
 
@@ -23,7 +25,8 @@ class camera:
     Class for all interactions with the video feed, image adjustments and recognition, aruco code identification, etc.
     """
 
-    out = ""
+    def __init__(self):
+        self.out = ""
 
     def init(self):
         """
@@ -91,8 +94,9 @@ class camera:
                     self.out = aruco.drawAxis(self.out, self.CM, self.dist_coef,
                                               rvecs[index], tvecs[index], 10)
 
-                    position_string = f"X:{tvecs[0][0][0]} Y:{tvecs[0][0][1]} Z:{tvecs[0][0][2]}"
-                    log.debug(position_string)
+                    coords.update(ids[index], rvecs[index], tvecs[index])
+                    # position_string = f"X:{tvecs[0][0][0]} Y:{tvecs[0][0][1]} Z:{tvecs[0][0][2]}"
+                    # log.debug(position_string)
 
             # # Display the original frame in a window
             # cv2.imshow('frame-image', out)
