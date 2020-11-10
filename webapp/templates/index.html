@@ -13,6 +13,15 @@
     <h1>My First Heading</h1>
     <p>My first paragraph.</p>
 
+    <img src="/video_feed" id="video_feed">
+    <script type="text/javascript">
+        function reload_video_feed() {
+            var d = new Date();
+            document.getElementById("video_feed").src = "/video_feed?a=" + d.getTime();
+        }
+    </script>
+    <button onclick="reload_video_feed()">Reload camera</button>
+
     <button onclick="connect_camera()">Connect camera</button>
 
     <script type="text/javascript" charset="utf-8">

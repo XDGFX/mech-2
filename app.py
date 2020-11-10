@@ -10,12 +10,10 @@ import os
 
 from dotenv import load_dotenv
 
-from mars import cam
 from webapp import webapp
 
 load_dotenv()
 
 webapp.start_server()
-# cam.init()
 
 print(os.environ.get("TEST"))
