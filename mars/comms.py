@@ -35,6 +35,17 @@ def on_message(client, userdata, msg):
     print(recieve_time + " In topic: " + msg.topic +
           " | Value: " + str(int(msg.payload.rstrip(b'\x00'))))
 
+# Function to merge 2 integer values in one combined message string
+# This lowers the resolution of the values to 16bit resolution but packs 2 values in one message
+
+
+def merge_integers(high_word, low_word):
+    # mask for signed 32bit integers to get a signed 16bit integer
+    bitmask = 0x0000FFFF
+    # shifts the high_word 16 bits and takes only the lower 16bits from the low_word
+    msg = str((high_word << 16) + (low_word & bitmask))
+    return msg
+
 
 # Create the mqtt client object
 client = mqtt.Client()
@@ -72,19 +83,9 @@ topics = {
 # Start the client to enable the above events to happen
 client.loop_start()
 
-# Values to send
-# The commands will be translated into a 32 bit integer
-# since 32 bit is more resolution that the robot will ever use, changing the information to x2 16 bit integers
-# then combining both to generate a 32 bit integer
-top_value = 345
-bot_value = -254
-
-# bitmask used to select only 16 bits from the bottom value (for signed integers)
-bitmask = 0x0000FFFF
-
-# In order to do this shift the top value 16 bits and add it to the bottom value
-val = (top_value << 16) + (bot_value & bitmask)
-
+value1 = 234
+value2 = -578
+message = merge_integers(value1, value2)
 # Send (Publish) the value continuously
 while(1):
 
@@ -94,7 +95,7 @@ while(1):
         time.sleep(1)
 
         # Publish the value (integer) as a string. All messages are strings
-        client.publish(topics["alien"][3], str(val))
+        client.publish(topics["alien"][3], message)
 
         # Plot in the terminal what we just did
         # print("%s %d" % (topics["alien"][3], val))
