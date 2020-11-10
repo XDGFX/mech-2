@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import os
+import time
 from threading import Thread
 
 from flask import Flask, Response, render_template
@@ -41,8 +43,15 @@ def index():
 
 @app.route("/video_feed")
 def video_feed():
-    # return the response generated along with the specific media
-    # type (mime type)
+    """
+    Return the response generated along with the specific media type (mime type)
+    """
+
+    # Terminate any existing video streams
+    cam.stream = False
+    time.sleep(2 / int(os.environ.get("FRAMERATE")))
+    cam.stream = True
+
     return Response(cam.video_feed(),
                     mimetype="multipart/x-mixed-replace; boundary=frame")
 

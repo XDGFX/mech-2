@@ -7,13 +7,14 @@ Callum Morrison, 2020
 """
 
 import os
+import time
 
 import cv2
 import cv2.aruco as aruco
 import numpy as np
 import requests
 
-from mars import logs, coords
+from mars import coords, logs
 
 coords = coords.coords()
 
@@ -27,12 +28,13 @@ class camera:
 
     def __init__(self):
         self.out = ""
+        self.stream = False
 
     def init(self):
         """
         Used to initialise variables and create camera objects.
         """
-        self.url = "http://192.168.0.31:8080/shot.jpg"
+        self.url = os.environ.get("CAM_IP")
 
         log.info(f"Connecting to camera at url: {self.url}")
 
@@ -115,7 +117,13 @@ class camera:
         """
         Reads updated video feed and yields each frame to produce a live stream.
         """
-        while True:
+        framerate = int(os.environ.get("FRAMERATE"))
+
+        # Check that video has been started
+        if self.out == "":
+            return
+
+        while self.stream:
             (flag, encodedImage) = cv2.imencode(".jpg", self.out)
 
             # Ensure the frame was successfully encoded
@@ -125,3 +133,5 @@ class camera:
             # Yield the output frame byte format
             yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' +
                   bytearray(encodedImage) + b'\r\n')
+
+            time.sleep(1 / framerate)

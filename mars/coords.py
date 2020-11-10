@@ -45,3 +45,23 @@ class coords:
         except Exception as e:
             log.exception(e)
             return False
+
+
+class route:
+    """
+    Storage of allowable paths that can be travelled.
+    Stored in a two-layer list of the following format:
+
+        [
+            aruco0,   aruco0 = [aruco1]             (From aruco0 travel to aruco1 is allowed)
+            aruco1,   aruco1 = [aruco0, aruco2]     (From )
+            ...
+            arucoN
+        ]
+
+    """
+    allowed_routes = [
+        [],  # Reserved for engineer
+        [],  # Reserved for alien
+        [3],  # 2 - Front door
+    ]

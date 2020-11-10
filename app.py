@@ -15,5 +15,3 @@ from webapp import webapp
 load_dotenv()
 
 webapp.start_server()
-
-print(os.environ.get("TEST"))
