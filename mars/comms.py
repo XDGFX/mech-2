@@ -1,3 +1,10 @@
+"""
+The communications file to send and recieve data from embedded robots
+Mechatronics 2
+
+Alberto Guerra Martinuzzi, 2020
+"""
+
 import paho.mqtt.client as mqtt  # This is the library to do the MQTT communications
 import time  # This is the library that will allow us to use the sleep function
 
