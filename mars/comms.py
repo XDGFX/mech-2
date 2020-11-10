@@ -65,8 +65,18 @@ topics = {
 # Start the client to enable the above events to happen
 client.loop_start()
 
-# Pick a value
-val = 254
+# Values to send
+# The commands will be translated into a 32 bit integer
+# since 32 bit is more resolution that the robot will ever use, changing the information to x2 16 bit integers
+# then combining both to generate a 32 bit integer
+top_value = 345
+bot_value = -254
+
+# bitmask used to select only 16 bits from the bottom value (for signed integers)
+bitmask = 0x0000FFFF
+
+# In order to do this shift the top value 16 bits and add it to the bottom value
+val = (top_value << 16) + (bot_value & bitmask)
 
 # Send (Publish) the value continuously
 while(1):
