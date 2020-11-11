@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href='/static/style.css'>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"
+        integrity="sha512-v8ng/uGxkge3d1IJuEo6dJP8JViyvms0cly9pnbfRxT6/31c3dRWxIiwGnMSWwZjHKOuY3EVmijs7k1jz/9bLA=="
+        crossorigin="anonymous"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.14.0/js/all.js"></script>
+
+
+    <!-- SOCKET.IO INITIALISATION -->
+    <script type="text/javascript" charset="utf-8">
+        var socket = io();
+        socket.on('connect', function () {
+            socket.emit('my event', { data: 'I\'m connected!' });
+        });
+
+        socket.on('disconnect', function () {
+            alert("Backend disconnected!");
+        });
+    </script>
+</head>
+
+<body>
+
+    <section class="section">
+
+
+        <!-- VIDEO FEED -->
+        <div class="container">
+            <figure class="image is-16by9">
+                <img src="/video_feed" id="video_feed">
+                <script type="text/javascript">
+                    function reload_video_feed() {
+                        var d = new Date();
+                        document.getElementById("video_feed").src = "/video_feed?a=" + d.getTime();
+                    }
+                </script>
+            </figure>
+        </div>
+
+        <!-- CONTROLLS -->
+        <div class="container">
+            <div class="buttons is-centered">
+                <button class="button" onclick="socket.emit('connect_camera')">Connect Camera</button>
+                <button class="button" onclick="reload_video_feed()">Reload Stream</button>
+            </div>
+        </div>
+
+        <!-- MARKERS TABLE -->
+        <div class="container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>X</th>
+                        <th>Y</th>
+                        <th>A</th>
+                    </tr>
+                </thead>
+                <tbody id="markers_table">
+
+                </tbody>
+            </table>
+            <script>
+                socket.on('update_markers', function (data) {
+                    table_data = ""
+                    markers = JSON.parse(data)
+
+                    for (i = 0; i < markers.length; i++) {
+                        if (markers[i] == 0) {
+                            table_data += `
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+                            `
+                        } else {
+                            table_data += `
+                            <tr>
+                                <th>${markers[i][0]}</th>
+                                <th>${markers[i][1]}</th>
+                                <th>${markers[i][2]}</th>
+                            </tr>
+                            `
+                        }
+                    }
+
+                    document.getElementById("markers_table").innerHTML = table_data
+                });
+            </script>
+        </div>
+    </section>
+
+
+
+
+</body>
+
+
+</html>
