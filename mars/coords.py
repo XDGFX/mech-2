@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-The main control file for all logic functions.
-Mechatronics 2
+coords.py
+Responsible for handling positional data for the engineer, alien, and compound, as well as pathfinding algorithms.
 
-Callum Morrison, 2020
+Mechatronics 2
+~ Callum Morrison, 2020
 """
 
 from mars import logs

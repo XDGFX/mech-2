@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-
 """
-logs
-The default logging module for ultrasonics, which should be used for logging consistency.
-XDGFX, 2020
+logs.py
+General log handling and formatting.
+
+Mechatronics 2
+~ Callum Morrison, 2020
 """
 
 import logging
+
 
 class CustomFormatter(logging.Formatter):
     """

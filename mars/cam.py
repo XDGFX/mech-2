@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-The main control file for all logic functions.
-Mechatronics 2
+cam.py
+Interfaces with an IP camera and provides vision system and image recognition functions.
 
-Callum Morrison, 2020
+Mechatronics 2
+~ Callum Morrison, 2020
 """
 
 import os

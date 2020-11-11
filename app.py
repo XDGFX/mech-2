@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-The main control file for all logic functions.
-Mechatronics 2
+app.py
+Starts and runs the main program code, boots up the webserver for access.
 
-Callum Morrison, 2020
+Mechatronics 2
+~ Callum Morrison, 2020
 """
 
 import os
