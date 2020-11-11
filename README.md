@@ -5,7 +5,7 @@
 
 2. Open the mech-2 folder using `File` > `Open`.
 
-3. Bring up the command line by dragging up from the bottom of the window. The terminal should be `bash` / `zsh` / `fish` (Jack may need to specify WSL instead of PowerShell).
+3. Bring up the command line by dragging up from the bottom of the window. The terminal should be `bash` / `zsh` / `fish`.
 
 4. Create a virtual environment using venv:
     Type the following commmand on the command line
@@ -32,3 +32,11 @@
     - Python (Microsoft)
     - Live Share (Microsoft)
     - Git Graph (mhutchie)
+
+## Organisation of settings / variables
+Adjustable variables may be stored in two locations:
+- mars/settings.py
+- .env
+
+The former should be used for variables which may be changed across all instances of the code, for example calibration parameters.
+The latter should be used for variables which may change between environments, for example IP addresses.

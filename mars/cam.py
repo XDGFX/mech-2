@@ -14,7 +14,7 @@ import cv2.aruco as aruco
 import numpy as np
 import requests
 
-from mars import coords, logs
+from mars import coords, logs, settings
 
 coords = coords.coords()
 
@@ -30,7 +30,7 @@ class camera:
         self.out = ""
         self.stream = False
 
-    def init(self):
+    def setup(self):
         """
         Used to initialise variables and create camera objects.
         """
@@ -56,7 +56,7 @@ class camera:
         """
         Continuously reads the camera feed, and identifies aruco codes if required.
         """
-        self.init()
+        self.setup()
 
         while True:
 
@@ -117,7 +117,6 @@ class camera:
         """
         Reads updated video feed and yields each frame to produce a live stream.
         """
-        framerate = int(os.environ.get("FRAMERATE"))
 
         # Check that video has been started
         if self.out == "":
@@ -134,4 +133,4 @@ class camera:
             yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' +
                   bytearray(encodedImage) + b'\r\n')
 
-            time.sleep(1 / framerate)
+            time.sleep(1 / settings.FRAMERATE)

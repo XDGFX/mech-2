@@ -9,8 +9,9 @@ XDGFX, 2020
 import logging
 
 class CustomFormatter(logging.Formatter):
-    """Logging Formatter to add colors and count warning / errors"""
-
+    """
+    Logging Formatter to add colors and count warning / errors
+    """
     grey = "\x1b[38m"
     blue = "\x1b[96m"
     yellow = "\x1b[33m"

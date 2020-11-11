@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import os
+import threading
 import time
-from threading import Thread
 
 from flask import Flask, Response, render_template
 from flask_socketio import SocketIO, emit, send
-from mars import cam, logs
+from mars import cam, logs, settings
 
 log = logs.create_log(__name__)
 
@@ -23,7 +23,7 @@ def serve():
 
 
 def start_server():
-    thread = Thread(target=serve)
+    thread = threading.Thread(target=serve)
     thread.start()
     print("Webserver started")
 
@@ -49,7 +49,7 @@ def video_feed():
 
     # Terminate any existing video streams
     cam.stream = False
-    time.sleep(2 / int(os.environ.get("FRAMERATE")))
+    time.sleep(2 / settings.FRAMERATE)
     cam.stream = True
 
     return Response(cam.video_feed(),
