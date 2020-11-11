@@ -6,12 +6,61 @@ Mechatronics 2
 Alberto Guerra Martinuzzi, 2020
 """
 from mars import logs  # better logging methods
+from mars import settings
 import paho.mqtt.client as mqtt  # This is the library to do the MQTT communications
 import time  # This is the library that will allow us to use the sleep function
 
 log = logs.create_log(__name__)
 
-# Defining the client class callback functions
+
+class comm:
+    # Constructor to start the communication path
+    def __init__(self):
+        # Here is the list of properties of the class
+        self.variable = 0
+        self.client = mqtt.Client()
+        self.client.on_connect = self.__on_connect
+        self.client.on_message = self.__on_message
+        self.client.username_pw_set("student", password="smartPass")
+        self.client.connect(
+            "ec2-3-10-235-26.eu-west-2.compute.amazonaws.com", 31415, 60)
+        log.info("Comms object created")
+
+    # Class destructor when deleting communication object
+    def release(self):
+        log.warning("Class object deleted")
+        self.client.loop_stop()
+        self.client.disconnect()
+
+    # Callback function for client class
+    def __on_connect(self, client, userdata, flags, rc):
+        if rc == 0:
+            log.info("Connection succesful")
+            self.client.subscribe("Team-B-alien/1")
+        else:
+            log.error("Something went wrong - exit code: " + str(rc))
+
+    # callback function for client class
+    def __on_message(self, client, userdata, msg):
+        log.info(msg.topic + " Updated to " +
+                 str(int(msg.payload.rstrip(b'\x00'))))
+
+    # Function to enable listening and publishing data from the server
+    def start_listening(self):
+        self.client.loop_start()
+        log.info("Starting listening function")
+
+    # Function to disable listening and publishing data from the server
+    def stop_listening(self):
+        self.client.loop_stop()
+
+    # Function to publish data to the desired channel
+    def publish_data(self, channel, data):
+        self.client.publish(channel, data)
+        log.info("Data_published = " + data + " On channel: " + channel)
+
+
+""" # Defining the client class callback functions
 
 # The callback for when we connect to the server. The meaning of the return code (rc) can be found here:
 # https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901079
@@ -115,4 +164,4 @@ while(1):
 
     # Capture any other error from the three lines (most likely will be a publish error)
     except:
-        log.error("There was an error while publishing the data.")
+        log.error("There was an error while publishing the data.") """
