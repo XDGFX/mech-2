@@ -1,13 +1,15 @@
+#!/usr/bin/env python3
 """
 The communications file to send and recieve data from embedded robots
 Mechatronics 2
 
 Alberto Guerra Martinuzzi, 2020
 """
-
+from mars import logs  # better logging methods
 import paho.mqtt.client as mqtt  # This is the library to do the MQTT communications
 import time  # This is the library that will allow us to use the sleep function
 
+log = logs.create_log(__name__)
 
 # Defining the client class callback functions
 
@@ -31,9 +33,11 @@ def on_connect(client, userdata, flags, rc):
 #   int() converts the remaining bytes into an integer, it treats them as a string
 #   str() converts the integer into a string for the purpose of printing it. See below (l.56) for an alternative way to do this
 def on_message(client, userdata, msg):
-    recieve_time = time.strftime("%Y/%m/%d, %H:%M:%S |", time.localtime())
-    print(recieve_time + " In topic: " + msg.topic +
-          " | Value: " + str(int(msg.payload.rstrip(b'\x00'))))
+    #    recieve_time = time.strftime("%Y/%m/%d, %H:%M:%S |", time.localtime())
+    #   print(recieve_time + " In topic: " + msg.topic +
+    #          " | Value: " + str(int(msg.payload.rstrip(b'\x00'))))
+    log.info(msg.topic + " Updated to " +
+             str(int(msg.payload.rstrip(b'\x00'))))
 
 # Function to merge 2 integer values in one combined message string
 # This lowers the resolution of the values to 16bit resolution but packs 2 values in one message
@@ -111,4 +115,4 @@ while(1):
 
     # Capture any other error from the three lines (most likely will be a publish error)
     except:
-        print("There was an error while publishing the data.")
+        log.error("There was an error while publishing the data.")
