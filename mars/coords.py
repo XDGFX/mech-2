@@ -7,7 +7,11 @@ Mechatronics 2
 ~ Callum Morrison, 2020
 """
 
-from mars import logs
+import json
+import time
+
+from mars import logs, settings
+from mars.webapp import ws_send
 
 log = logs.create_log(__name__)
 
@@ -26,20 +30,30 @@ class coords:
             "entrance": 2
         }
 
-    def update(self, index, rvecs, tvecs):
+        # Initialise start time for datarate sync
+        self.start_time = time.time()
+
+    def update(self, index, tvecs, yaw):
         """
         Save a new position matrix to an aruco code id
         """
         index = index[0]
 
-        self.markers[index] = {
-            "tvecs": tvecs[0],
-            "rvecs": rvecs[0]
-        }
+        # Assign markers in format [x_pos, y_pos, yaw]
+        self.markers[index] = [tvecs[0][0], tvecs[0][1], yaw]
+
+        # Only send updated marker positions at required polling interval
+        end_time = time.time()
+        time_remain = self.start_time + 1 / settings.DATARATE - end_time
+
+        # Update markers on UI
+        if time_remain < 0:
+            ws_send("update_markers", json.dumps(self.markers))
+            self.start_time = time.time()
 
     def get_pos(self, entity):
         """
-        Get the current position of the engineer or alien
+        Get the current position of an aruco marker
         """
         try:
             return self.markers(self.ids[entity])
