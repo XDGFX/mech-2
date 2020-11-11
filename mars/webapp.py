@@ -33,12 +33,12 @@ def serve():
 def start_server():
     thread = threading.Thread(target=serve)
     thread.start()
-    print("Webserver started")
+    log.info("Webserver started")
 
 
 # --- SEND COMMANDS ---
-def send(event, data):
-    sio.emit(str(event), {'data': data})
+def ws_send(event, data=None):
+    sio.emit(str(event), data)
 
 
 # --- WEBSERVER ROUTES ---
@@ -54,9 +54,9 @@ def video_feed():
     """
 
     # Terminate any existing video streams
-    cam.stream = False
+    cam.allow_stream = False
     time.sleep(2 / settings.FRAMERATE)
-    cam.stream = True
+    cam.allow_stream = True
 
     return Response(cam.video_feed(),
                     mimetype="multipart/x-mixed-replace; boundary=frame")
@@ -65,7 +65,8 @@ def video_feed():
 # --- WEBSOCKET ROUTES ---
 @sio.on('connect_camera')
 def connect_camera():
-    try:
-        cam.generate()
-    except Exception as e:
-        log.error
+    cam.allow_generate = False
+    time.sleep(2 / settings.FRAMERATE)
+    cam.allow_generate = True
+
+    cam.generate()

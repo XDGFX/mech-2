@@ -7,6 +7,7 @@ Mechatronics 2
 ~ Callum Morrison, 2020
 """
 
+import math
 import os
 import time
 
@@ -15,9 +16,7 @@ import cv2.aruco as aruco
 import numpy as np
 import requests
 
-from mars import coords, logs, settings
-
-coords = coords.coords()
+from mars import logs, settings
 
 log = logs.create_log(__name__)
 
@@ -29,23 +28,25 @@ class camera:
 
     def __init__(self):
         self.out = ""
-        self.stream = False
+        self.allow_stream = False
+        self.allow_generate = False
 
     def setup(self):
         """
         Used to initialise variables and create camera objects.
         """
+        from mars import coords
+        self.coords = coords.coords()
+
         self.url = os.environ.get("CAM_IP")
 
-        log.info(f"Connecting to camera at url: {self.url}")
-
-        # # Create two opencv named windows
-        # cv2.namedWindow("frame-image", cv2.WINDOW_AUTOSIZE)
+        log.info(f"Using camera url: {self.url}")
 
         # Read and store calibration information
         Camera = np.load(os.path.join(
             "mars", "cam_data", "Sample_Calibration.npz"))
-        self.CM = Camera['CM']  # Camera matrix
+        self.CM = Camera['CM']
+
         # Distortion coefficients from the camera
         self.dist_coef = Camera['dist_coef']
 
@@ -57,15 +58,13 @@ class camera:
         """
         Continuously reads the camera feed, and identifies aruco codes if required.
         """
+
+        # Perform camera setup if not already complete
         self.setup()
 
-        while True:
-
-            # # Start the performance clock
-            # start = time.perf_counter()
-
-            # # Capture current frame from the camera
-            # ret, frame = cap.read()
+        while self.allow_generate:
+            # Save start time to synchronise framerate
+            start_time = time.time()
 
             # Read latest frame from IP camera
             try:
@@ -73,7 +72,7 @@ class camera:
             except Exception as e:
                 log.exception(
                     "Unexpected error code when connecting to camera!")
-                raise SystemError
+                raise
 
             # Convert to openCV compatible image
             frame = np.asarray(bytearray(resp.read()), dtype="uint8")
@@ -97,22 +96,27 @@ class camera:
                     self.out = aruco.drawAxis(self.out, self.CM, self.dist_coef,
                                               rvecs[index], tvecs[index], 10)
 
-                    coords.update(ids[index], rvecs[index], tvecs[index])
-                    # position_string = f"X:{tvecs[0][0][0]} Y:{tvecs[0][0][1]} Z:{tvecs[0][0][2]}"
-                    # log.debug(position_string)
+                    # Convert Rodriguez's angles to rotation matrix
+                    R = cv2.Rodrigues(rvecs[index][0])[0]
 
-            # # Display the original frame in a window
-            # cv2.imshow('frame-image', out)
+                    # Convert rotation matrix to yaw (Euler angles)
+                    # Adapted from @kangaroo on stackoverflow.com
+                    cosine_for_pitch = math.sqrt(R[0][0] ** 2 + R[1][0] ** 2)
 
-        #     # If the button q is pressed in one of the windows
-        #     if cv2.waitKey(20) & 0xFF == ord('q'):
-        #         # Exit the While loop
-        #         break
+                    is_singular = cosine_for_pitch < 10**-6
+                    if not is_singular:
+                        yaw = math.atan2(R[1][0], R[0][0])
+                    else:
+                        yaw = math.atan2(-R[1][2], R[1][1])
 
-        # # close all windows
-        # cv2.destroyAllWindows()
-        # # exit the kernel
-        # exit(0)
+                    self.coords.update(ids[index], tvecs[index], yaw)
+
+            # Wait until the next frame is required
+            end_time = time.time()
+            time_remain = start_time + 1 / settings.FRAMERATE - end_time
+
+            if time_remain > 0:
+                time.sleep(time_remain)
 
     def video_feed(self):
         """
@@ -123,7 +127,12 @@ class camera:
         if self.out == "":
             return
 
-        while self.stream:
+        # Loop until a new session is created
+        while self.allow_stream:
+            # Save start time to synchronise framerate
+            start_time = time.time()
+
+            # Encode image in .jpg format
             (flag, encodedImage) = cv2.imencode(".jpg", self.out)
 
             # Ensure the frame was successfully encoded
@@ -134,4 +143,9 @@ class camera:
             yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' +
                   bytearray(encodedImage) + b'\r\n')
 
-            time.sleep(1 / settings.FRAMERATE)
+            # Wait until the next frame is required
+            end_time = time.time()
+            time_remain = start_time + 1 / settings.FRAMERATE - end_time
+
+            if time_remain > 0:
+                time.sleep(time_remain)

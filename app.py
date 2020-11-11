@@ -10,7 +10,7 @@ Mechatronics 2
 import os
 from dotenv import load_dotenv
 
-from webapp import webapp
+from mars import webapp
 
 load_dotenv()
 
