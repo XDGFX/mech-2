@@ -42,12 +42,12 @@ def ws_send(event, data=None):
 
 
 # --- WEBSERVER ROUTES ---
-@ app.route('/')
+@app.route('/')
 def index():
     return render_template('index.html')
 
 
-@ app.route("/video_feed")
+@app.route("/video_feed")
 def video_feed():
     """
     Return the response generated along with the specific media type (mime type)
@@ -59,14 +59,14 @@ def video_feed():
     cam.allow_stream = True
 
     return Response(cam.video_feed(),
-                    mimetype = "multipart/x-mixed-replace; boundary=frame")
+                    mimetype="multipart/x-mixed-replace; boundary=frame")
 
 
 # --- WEBSOCKET ROUTES ---
-@ sio.on('connect_camera')
+@sio.on('connect_camera')
 def connect_camera():
-    cam.allow_generate=False
+    cam.allow_generate = False
     time.sleep(2 / settings.FRAMERATE)
-    cam.allow_generate=True
+    cam.allow_generate = True
 
     cam.generate()

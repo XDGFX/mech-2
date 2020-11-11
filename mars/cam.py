@@ -40,7 +40,7 @@ class camera:
 
         self.url = os.environ.get("CAM_IP")
 
-        log.info(f"Connecting to camera at url: {self.url}")
+        log.info(f"Using camera url: {self.url}")
 
         # Read and store calibration information
         Camera = np.load(os.path.join(

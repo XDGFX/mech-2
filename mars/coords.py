@@ -8,6 +8,7 @@ Mechatronics 2
 """
 
 import json
+import math
 import time
 
 from mars import logs, settings
@@ -51,15 +52,57 @@ class coords:
             ws_send("update_markers", json.dumps(self.markers))
             self.start_time = time.time()
 
+            self.calculate_vector("engineer", "alien")
+
     def get_pos(self, entity):
         """
         Get the current position of an aruco marker
         """
         try:
-            return self.markers(self.ids[entity])
+            # Valid for aruco code ids or entity names
+            if isinstance(entity, int):
+                return self.markers[entity]
+            else:
+                return self.markers[self.ids[entity]]
+
         except Exception as e:
             log.exception(e)
             return False
+
+    def calculate_vector(self, source, target):
+        """
+        Calculates the vector between two aruco markers.
+
+        @returns:
+        magnitude - Size of the vector
+        direction - Angle of the vector in radians (CW)
+        """
+
+        # Get latest positions for both markers
+        pos_source = self.get_pos(source)
+        pos_target = self.get_pos(target)
+
+        # Both markers need to be detected
+        if not (pos_source and pos_target):
+            log.error(
+                "Vector calculation between two points failed because one or both points did not exist!")
+            return
+
+        # Calculate distance between markers
+        magnitude = math.sqrt(
+            (pos_target[0] - pos_source[0])**2 + (pos_target[1] - pos_source[1])**2)
+
+        # Calculate direction to north by subtracting two angles
+        direction = - pos_source[2]
+
+        # Add extra totation to point towards the target
+        direction -= math.atan((pos_target[0] - pos_source[0]) /
+                               (pos_target[1] - pos_source[1]))
+
+        log.debug(
+            f"Vector {source} > {target}: Magnitude = {magnitude} | Direction = {direction}")
+
+        return magnitude, direction
 
 
 class route:
