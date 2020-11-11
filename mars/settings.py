@@ -7,3 +7,5 @@ Mechatronics 2
 """
 
 FRAMERATE = 10
+
+TEAM_NAME = "ALIEN_SELF_ISOLATION"

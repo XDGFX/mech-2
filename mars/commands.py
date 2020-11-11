@@ -5,17 +5,20 @@ module containing all the commands to send to the robots.
 Mechatronics 2
 ~ Alberto Guerra Martinuzzi, 2020
 """
-
+import threading
 from mars import settings
+from mars import comms
 
 # list containing all the commands that will be sent
 callstack = []
 
 # 3 main topics: alien, engineer, compound, they each have 8 cahnnels available
 # list of channel names in the form - TEAM_NAME + topic + channel_number (1-8)
-alien_channels = [TEAM_NAME + "-alien/" + str(n) for n in range(1, 9)]
-enginner_channels = [TEAM_NAME + "-engineer/" + str(n) for n in range(1, 9)]
-compound_channels = [TEAM_NAME + "-compound/" + str(n) for n in range(1, 9)]
+alien_channels = [settings.TEAM_NAME + "-alien/" + str(n) for n in range(1, 9)]
+enginner_channels = [settings.TEAM_NAME +
+                     "-engineer/" + str(n) for n in range(1, 9)]
+compound_channels = [settings.TEAM_NAME +
+                     "-compound/" + str(n) for n in range(1, 9)]
 
 # This dictionary contains the names for each topic and channel.
 # Channels are accessed by using the topic name and the channel number in the form 0-7 (because of python lists)
@@ -29,9 +32,11 @@ topics = {
 command_channels = {
     "MV": 1,
     "STP": 3,
-    "FNC": 5
+    "FNC": 4
 
 }
+
+data_avaliable = threading.Event()
 
 
 def merge_data(high_word, low_word):
@@ -43,9 +48,8 @@ def merge_data(high_word, low_word):
 
 
 def move(device, distance, angle):
-
+    global callstack, data_avaliable
     payload = merge_data(distance, angle)
-
     callstack.append(
         {
             "dest": device,
@@ -53,9 +57,11 @@ def move(device, distance, angle):
             "payload": payload
         }
     )
+    data_avaliable.set()
 
 
 def stop(device):
+    global callstack, data_avaliable
     payload = "1"
     callstack.append(
         {
@@ -64,9 +70,11 @@ def stop(device):
             "payload": payload
         }
     )
+    data_avaliable.set()
 
 
 def function(device):
+    global callstack, data_avaliable
     payload = "1"
     callstack.append(
         {
@@ -75,8 +83,4 @@ def function(device):
             "payload": payload
         }
     )
-
-
-def execute(command):
-    channel = topics[command["dest"]][command_channels[command["command"]]]
-    payload = command["payload"]
+    data_avaliable.set()
