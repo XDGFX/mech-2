@@ -6,4 +6,8 @@ Mechatronics 2
 ~ Callum Morrison, 2020
 """
 
+# Camera framerate in FPS
 FRAMERATE = 10
+
+# General data transmission rate for UI
+DATARATE = 1
