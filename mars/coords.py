@@ -119,7 +119,45 @@ class route:
 
     """
     allowed_routes = [
-        [],  # Reserved for engineer
-        [],  # Reserved for alien
-        [3],  # 2 - Front door
+        [],                 # Reserved for engineer
+        [],                 # Reserved for alien
+        [4, 15],            # 2 - Launch Pad
+        [],                 # 3 - Unused
+        [2, 5],             # 4
+        [4, 6],             # 5
+        [5, 7],             # 6
+        [6, 8, 17],         # 7 - Door B
+        [7, 9, 18],         # 8 - Door A
+        [8, 10],            # 9 - Door A; Alien Start; Second Task
+        [9, 11],            # 10
+        [10, 12, 13],       # 11
+        [11, 13, 20],       # 12 - Third Task; Door D
+        [11, 12, 14, 19],   # 13 - Door C
+        [13, 15, 16],       # 14
+        [2, 14, 20],        # 15
+        [14, 17],           # 16
+        [7, 16],            # 17 - First Task; Door B
+        [8, 19],            # 18
+        [13, 18],           # 19 - Door C
+        [12, 15],           # 20 - Door D
     ]
+
+    allowed_routes_alien = allowed_routes
+
+    allowed_routes_alien[8] = [4, 7]
+
+    weights = [
+        0,  # Reserved for engineer
+        0,  # Reserved for alien
+        1,  # 2 - Front door
+    ]
+
+    def pathfinder(self, start, finish, avoid):
+        """
+        Computes fastest path between two points, with an optional avoidance parameter.
+        Will not pass over the same point twice.
+        `start`, `finish`, and `avoid`, should all be integers or character names.
+
+        @return:
+        `route`: A list of codes to travel through to the destination.
+        """
