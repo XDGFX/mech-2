@@ -89,6 +89,7 @@ class engineer:
                         if not new_target_route:
                             log.error(
                                 f"The engineer can't find any route to it's target: {target_marker}!")
+                            continue
 
                         # Check if new route is in the same direction, or a new direction
                         if target_route[1] == new_target_route[1]:

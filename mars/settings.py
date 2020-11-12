@@ -21,5 +21,8 @@ DETECTION_RADIUS = 0
 # Radius within which the Engineer has reached a marker
 MARKER_RADIUS = 5
 
+# How much aruco positions can change with each update; 1 is 100% the new value
+MARKER_SMOOTHING = 0.3
+
 # General variables for communications
 TEAM_NAME = "ALIEN_SELF_ISOLATION"

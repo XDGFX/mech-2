@@ -61,14 +61,28 @@ class coords:
         """
         index = int(index[0])
 
+        old_marker = self.get_pos(index)
+
+        # Smooth changes in marker position
+        if old_marker:
+            x_pos = old_marker[0] * (1 - settings.MARKER_SMOOTHING) + \
+                tvecs[0][0] * settings.MARKER_SMOOTHING
+            y_pos = old_marker[1] * (1 - settings.MARKER_SMOOTHING) + \
+                tvecs[0][1] * settings.MARKER_SMOOTHING
+            yaw = old_marker[2] * (1 - settings.MARKER_SMOOTHING) + \
+                yaw * settings.MARKER_SMOOTHING
+        else:
+            x_pos = tvecs[0][0]
+            y_pos = tvecs[0][1]
+
         # Assign markers in format [x_pos, y_pos, yaw]
-        self.markers[index] = [tvecs[0][0], tvecs[0][1], yaw]
+        self.markers[index] = [x_pos, y_pos, yaw]
 
         with sqlite3.connect(self.db_file) as conn:
             cursor = conn.cursor()
 
             query = "REPLACE INTO markers (marker, x, y, a) VALUES (?, ?, ?, ?)"
-            cursor.execute(query, (index, tvecs[0][0], tvecs[0][1], yaw))
+            cursor.execute(query, (index, x_pos, y_pos, yaw))
 
             conn.commit()
 
