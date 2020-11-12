@@ -18,6 +18,8 @@ class common:
     Used for global parameters and shared functions.
     """
     pass
+    # def __init__(self):
+    #     engineer.next_task()
 
 
 class engineer:
@@ -62,6 +64,9 @@ class engineer:
 
                 # If within target radius of target marker
                 if magnitude < settings.MARKER_RADIUS:
+                    log.debug("Engineer within target marker radius!")
+                    log.debug("Moving to next marker...")
+
                     # Update current position
                     self.current_marker = target_route[0]
 
@@ -76,6 +81,7 @@ class engineer:
 
                     # If within hearing distance, re-calculate route with alien avoidance
                     if alien_distance < settings.DETECTION_RADIUS:
+                        log.debug("Engineer within hearing distance of alien!")
                         new_target_route = coords.route().pathfinder(
                             self.current_marker, target_marker, avoid=alien.current_marker)
 
@@ -93,7 +99,8 @@ class engineer:
 
                     else:
                         # Send a command to go to the first marker in the route
-                        commands.move("engineer", magnitude, direction)
+                        # commands.move("engineer", magnitude, direction)
+                        log.debug(f"{magnitude}, {direction}")
 
             if not target_route:
                 # Route is complete

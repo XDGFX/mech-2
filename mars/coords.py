@@ -9,21 +9,40 @@ Mechatronics 2
 
 import json
 import math
+import os
+import sqlite3
 import time
 from copy import deepcopy
 
 from mars import logs, settings
 from mars.comms import commands
-from mars.webapp import ws_send
 
 log = logs.create_log(__name__)
 
 
 class coords:
     def __init__(self):
+        # Initialise markers database
+        self.db_file = os.path.join("mars", "cam_data", "markers.db")
         num_markers = 64
 
-        # Array of all aruco codes available
+        with sqlite3.connect(self.db_file) as conn:
+            cursor = conn.cursor()
+
+            query = "CREATE TABLE IF NOT EXISTS markers (marker INTEGER PRIMARY KEY, x REAL, y REAL, a REAL)"
+            cursor.execute(query)
+
+            # --- This was removed because it would clear the database any time
+            # --- a new module tried to access the database
+            # # Array of all aruco codes available
+            # markers = [(i, 0, 0, 0) for i in range(num_markers)]
+
+            # query = "REPLACE INTO markers (marker, x, y, a) VALUES(?, ?, ?, ?)"
+            # cursor.executemany(query, markers)
+
+            conn.commit()
+
+        # Initialise markers variable for UI
         self.markers = [0] * num_markers
 
         # Corresponding aruco ids
@@ -40,10 +59,21 @@ class coords:
         """
         Save a new position matrix to an aruco code id
         """
-        index = index[0]
+        index = int(index[0])
+
+        if index == 0:
+            log.info("Index 0")
 
         # Assign markers in format [x_pos, y_pos, yaw]
         self.markers[index] = [tvecs[0][0], tvecs[0][1], yaw]
+
+        with sqlite3.connect(self.db_file) as conn:
+            cursor = conn.cursor()
+
+            query = "REPLACE INTO markers (marker, x, y, a) VALUES (?, ?, ?, ?)"
+            cursor.execute(query, (index, tvecs[0][0], tvecs[0][1], yaw))
+
+            conn.commit()
 
         # Only send updated marker positions at required polling interval
         end_time = time.time()
@@ -51,10 +81,9 @@ class coords:
 
         # Update markers on UI
         if time_remain < 0:
+            from mars.webapp import ws_send
             ws_send("update_markers", json.dumps(self.markers))
             self.start_time = time.time()
-
-            self.calculate_vector("engineer", "alien")
 
     def get_pos(self, entity):
         """
@@ -63,9 +92,19 @@ class coords:
         try:
             # Valid for aruco code ids or entity names
             if isinstance(entity, int):
-                return self.markers[entity]
+                index = entity
             else:
-                return self.markers[self.ids[entity]]
+                index = self.ids[entity]
+
+            with sqlite3.connect(self.db_file) as conn:
+                cursor = conn.cursor()
+
+                query = "SELECT x, y, a FROM markers WHERE marker = ?"
+                cursor.execute(query, (index,))
+
+                rows = cursor.fetchone()
+
+                return list(rows)
 
         except Exception as e:
             log.exception(e)
@@ -95,7 +134,7 @@ class coords:
             (pos_target[0] - pos_source[0])**2 + (pos_target[1] - pos_source[1])**2)
 
         # Calculate direction to north by subtracting two angles
-        direction = - pos_source[2]
+        direction = -pos_source[2]
 
         # Add extra totation to point towards the target
         direction -= math.atan((pos_target[0] - pos_source[0]) /
