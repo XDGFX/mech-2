@@ -10,8 +10,10 @@ Mechatronics 2
 import json
 import math
 import time
+from copy import deepcopy
 
 from mars import logs, settings
+from mars.comms import commands
 from mars.webapp import ws_send
 
 log = logs.create_log(__name__)
@@ -112,52 +114,156 @@ class route:
 
         [
             aruco0,   aruco0 = [aruco1]             (From aruco0 travel to aruco1 is allowed)
-            aruco1,   aruco1 = [aruco0, aruco2]     (From )
+            aruco1,   aruco1 = [aruco0, aruco2]     (From aruco 1, travel to aruco 0 or 2)
             ...
             arucoN
         ]
 
     """
-    allowed_routes = [
-        [],                 # Reserved for engineer
-        [],                 # Reserved for alien
-        [4, 15],            # 2 - Launch Pad
-        [],                 # 3 - Unused
-        [2, 5],             # 4
-        [4, 6],             # 5
-        [5, 7],             # 6
-        [6, 8, 17],         # 7 - Door B
-        [7, 9, 18],         # 8 - Door A
-        [8, 10],            # 9 - Door A; Alien Start; Second Task
-        [9, 11],            # 10
-        [10, 12, 13],       # 11
-        [11, 13, 20],       # 12 - Third Task; Door D
-        [11, 12, 14, 19],   # 13 - Door C
-        [13, 15, 16],       # 14
-        [2, 14, 20],        # 15
-        [14, 17],           # 16
-        [7, 16],            # 17 - First Task; Door B
-        [8, 19],            # 18
-        [13, 18],           # 19 - Door C
-        [12, 15],           # 20 - Door D
-    ]
 
-    allowed_routes_alien = allowed_routes
+    def __init__(self):
+        # Routes allowed for the engineer
+        self.allowed_routes = [
+            [],                 # Reserved for engineer
+            [],                 # Reserved for alien
+            [4, 15],            # 2 - Launch Pad
+            [],                 # 3 - Unused
+            [2, 5],             # 4
+            [4, 6],             # 5
+            [5, 7],             # 6
+            [6, 8, 17],         # 7 - Door B
+            [7, 9, 18],         # 8 - Door A
+            [8, 10],            # 9 - Door A; Alien Start; Second Task
+            [9, 11],            # 10
+            [10, 12, 13],       # 11
+            [11, 13, 20],       # 12 - Third Task; Door D
+            [11, 12, 14, 19],   # 13 - Door C
+            [13, 15, 16],       # 14
+            [2, 14, 20],        # 15
+            [14, 17],           # 16
+            [7, 16],            # 17 - First Task; Door B
+            [8, 19],            # 18
+            [13, 18],           # 19 - Door C
+            [12, 15],           # 20 - Door D
+        ]
 
-    allowed_routes_alien[8] = [4, 7]
+        # Markers which require a check for an open door
+        self.markers_doors = [
+            [8, 9],     # Door 1 / A
+            [7, 17],    # Door 2 / B
+            [19, 13],   # Door 3 / C
+            [20, 12]    # Door 4 / D
+        ]
 
-    weights = [
-        0,  # Reserved for engineer
-        0,  # Reserved for alien
-        1,  # 2 - Front door
-    ]
+        # Current state of all doors, all open to start
+        self.doors_state = [
+            True,       # Door 1 / A
+            True,       # Door 2 / B
+            True,       # Door 3 / C
+            True        # Door 4 / D
+        ]
 
-    def pathfinder(self, start, finish, avoid):
+        # Update shortcuts for alien
+        self.allowed_routes_alien = deepcopy(self.allowed_routes)
+
+        self.allowed_routes_alien[4].append(17)
+        self.allowed_routes_alien[17].append(4)
+
+        self.allowed_routes_alien[17].append(18)
+        self.allowed_routes_alien[18].append(17)
+
+        self.allowed_routes_alien[18].append(10)
+        self.allowed_routes_alien[10].append(18)
+
+        self.allowed_routes_alien[16].append(2)
+        self.allowed_routes_alien[2].append(16)
+
+        # self.weights = [
+        #     0,  # Reserved for engineer
+        #     0,  # Reserved for alien
+        #     1,  # 2 - Front door
+        # ]
+
+    def doors(self, index, state):
+        """
+        Opens or closes a door identified by `index`.
+        `state` is True for open and False for closed.
+        """
+        self.doors_state[index] = state
+        commands.door(index, state)
+
+    def pathfinder(self, start, finish, shortcuts=False, avoid=None):
         """
         Computes fastest path between two points, with an optional avoidance parameter.
         Will not pass over the same point twice.
-        `start`, `finish`, and `avoid`, should all be integers or character names.
+        `start`, `finish`, and `avoid`, should all be aruco code integers.
+        `shortcuts` are True for Alien, and False for Engineer.
 
         @return:
         `route`: A list of codes to travel through to the destination.
         """
+
+        # Initialise all routes
+        routes = []
+        routes_old = []
+        solution_found = False
+
+        # Adjust routes according to shortcuts
+        if shortcuts:
+            allowed_routes = deepcopy(self.allowed_routes_alien)
+        else:
+            allowed_routes = deepcopy(self.allowed_routes)
+
+        # Check if doors are locked and adjust route if required
+        for index in range(len(self.doors_state)):
+
+            # Only adjust if start point next to a door
+            if start in self.markers_doors[index]:
+
+                # Remove route through the door
+                for code in self.markers_doors[index]:
+                    allowed_routes[code] = [
+                        x for x in allowed_routes[code] if x not in self.markers_doors[index]]
+
+        # Loop over all possible next positions from the starting position
+        for next_position in allowed_routes[start]:
+            routes.append(
+                [start, next_position]
+            )
+
+        # Keep looking while new routes are being generated
+        while routes and not solution_found:
+            routes_old = routes
+            routes = []
+
+            # Loop over all current routes
+            for route in routes_old:
+                last_point = route[-1]
+
+                # Append to routes if finish reached
+                if last_point == finish:
+                    routes.append(route)
+                    solution_found = True
+                    break
+
+                # Loop over possible routes from here
+                for next_point in allowed_routes[last_point]:
+
+                    # Only update route if not already traversed through points
+                    if next_point not in [*route, avoid]:
+
+                        # Add new route to existing routes
+                        routes.append([*route, next_point])
+
+        # Remove routes which don't end at the finish
+        routes = [route for route in routes_old if route[-1] == finish]
+
+        # Rank remaining routes by length
+        if routes:
+            best_route = min(routes, key=len)
+
+            return best_route
+
+        # No route was found
+        log.error(f"No route found between {start} and {finish}")
+        return False
