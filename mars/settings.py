@@ -7,7 +7,7 @@ Mechatronics 2
 """
 
 # Camera framerate in FPS
-FRAMERATE = 1
+FRAMERATE = 10
 
 # General data transmission rate for UI
 DATARATE = 1

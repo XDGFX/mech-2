@@ -11,6 +11,7 @@ import json
 import math
 import os
 import sqlite3
+import redis
 import time
 from copy import deepcopy
 
@@ -23,24 +24,27 @@ log = logs.create_log(__name__)
 class coords:
     def __init__(self):
         # Initialise markers database
-        self.db_file = os.path.join("mars", "cam_data", "markers.db")
+        # self.db_file = os.path.join("mars", "cam_data", "markers.db")
         num_markers = 64
 
-        with sqlite3.connect(self.db_file) as conn:
-            cursor = conn.cursor()
+        self.r = redis.Redis(host='localhost', port=6379,
+                             db=0, decode_responses=True)
 
-            query = "CREATE TABLE IF NOT EXISTS markers (marker INTEGER PRIMARY KEY, x REAL, y REAL, a REAL)"
-            cursor.execute(query)
+        # with sqlite3.connect(self.db_file) as conn:
+        #     cursor = conn.cursor()
 
-            # --- This was removed because it would clear the database any time
-            # --- a new module tried to access the database
-            # # Array of all aruco codes available
-            # markers = [(i, 0, 0, 0) for i in range(num_markers)]
+        #     query = "CREATE TABLE IF NOT EXISTS markers (marker INTEGER PRIMARY KEY, x REAL, y REAL, a REAL)"
+        #     cursor.execute(query)
 
-            # query = "REPLACE INTO markers (marker, x, y, a) VALUES(?, ?, ?, ?)"
-            # cursor.executemany(query, markers)
+        #     # --- This was removed because it would clear the database any time
+        #     # --- a new module tried to access the database
+        #     # # Array of all aruco codes available
+        #     # markers = [(i, 0, 0, 0) for i in range(num_markers)]
 
-            conn.commit()
+        #     # query = "REPLACE INTO markers (marker, x, y, a) VALUES(?, ?, ?, ?)"
+        #     # cursor.executemany(query, markers)
+
+        #     conn.commit()
 
         # Initialise markers variable for UI
         self.markers = [0] * num_markers
@@ -78,13 +82,16 @@ class coords:
         # Assign markers in format [x_pos, y_pos, yaw]
         self.markers[index] = [x_pos, y_pos, yaw]
 
-        with sqlite3.connect(self.db_file) as conn:
-            cursor = conn.cursor()
+        # with redis.Redis(host='localhost', port=6379, db=0, decode_responses=True) as r:
+        self.r.set(index, json.dumps([x_pos, y_pos, yaw]))
 
-            query = "REPLACE INTO markers (marker, x, y, a) VALUES (?, ?, ?, ?)"
-            cursor.execute(query, (index, x_pos, y_pos, yaw))
+        # with sqlite3.connect(self.db_file) as conn:
+        #     cursor = conn.cursor()
 
-            conn.commit()
+        #     query = "REPLACE INTO markers (marker, x, y, a) VALUES (?, ?, ?, ?)"
+        #     cursor.execute(query, (index, x_pos, y_pos, yaw))
+
+        #     conn.commit()
 
         # Only send updated marker positions at required polling interval
         end_time = time.time()
@@ -107,15 +114,17 @@ class coords:
             else:
                 index = self.ids[entity]
 
-            with sqlite3.connect(self.db_file) as conn:
-                cursor = conn.cursor()
+            # with sqlite3.connect(self.db_file) as conn:
+            #     cursor = conn.cursor()
 
-                query = "SELECT x, y, a FROM markers WHERE marker = ?"
-                cursor.execute(query, (index,))
+            #     query = "SELECT x, y, a FROM markers WHERE marker = ?"
+            #     cursor.execute(query, (index,))
 
-                rows = cursor.fetchone()
+            #     rows = cursor.fetchone()
 
-                return list(rows)
+            marker = json.loads(self.r.get(index))
+
+            return marker
 
         except Exception as e:
             log.exception(e)
