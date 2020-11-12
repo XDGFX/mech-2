@@ -100,7 +100,7 @@ class engineer:
                     else:
                         # Send a command to go to the first marker in the route
                         # commands.move("engineer", magnitude, direction)
-                        log.debug(f"{magnitude}, {direction}")
+                        pass
 
             if not target_route:
                 # Route is complete

@@ -61,9 +61,6 @@ class coords:
         """
         index = int(index[0])
 
-        if index == 0:
-            log.info("Index 0")
-
         # Assign markers in format [x_pos, y_pos, yaw]
         self.markers[index] = [tvecs[0][0], tvecs[0][1], yaw]
 
@@ -136,9 +133,15 @@ class coords:
         # Calculate direction to north by subtracting two angles
         direction = -pos_source[2]
 
-        # Add extra totation to point towards the target
-        direction -= math.atan((pos_target[0] - pos_source[0]) /
-                               (pos_target[1] - pos_source[1]))
+        delta_x = pos_target[0] - pos_source[0]
+        delta_y = pos_target[1] - pos_source[1]
+
+        # Add extra rotation to point towards the target
+        direction -= math.atan(delta_x / delta_y)
+
+        # If delta_y is negative, angle correction by adding pi
+        if delta_y < 0:
+            direction += math.pi
 
         log.debug(
             f"Vector {source} > {target}: Magnitude = {magnitude} | Direction = {direction}")
