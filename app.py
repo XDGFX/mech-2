@@ -22,14 +22,10 @@ elif os.environ.get("ENVIRONMENT") == "DEV_WEB":
     webapp.start_server()
 
 elif os.environ.get("ENVIRONMENT") == "DEV_COMMS":
-    from mars import comms, commands
+    from mars.comms import commands
     from time import sleep
-    c = comms.communications()
-    c.run()
-    sleep(1)
-    time = 0
-    while time < 10:
-        commands.function("alien")
-        sleep(5)
-        commands.function("alien")
-        time = time + 1
+    c = commands()
+    c.start_comms()
+    sleep(2)
+    c.move("alien", 500, -20)
+    c.stop_comms()
