@@ -1,0 +1,36 @@
+body, button, input, optgroup, select, textarea, h1 {
+    font-family: 'Goldman', cursive !important;
+    color: white !important;
+    text-shadow:
+        -1px -1px 0 #000,  
+        1px -1px 0 #000,
+        -1px 1px 0 #000,
+        1px 1px 0 #000;
+}
+
+/* #markers_table {
+    position: absolute;
+} */
+
+.container {
+    padding-bottom: 10px;
+}
+
+html {
+    background-image: url("366025.jpg");
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: 100% 100%;
+}
+
+.button {
+    background-color: transparent !important;
+}
+
+.table {
+    background-color: transparent !important;
+}
+
+.table th {
+    color: white !important;
+}

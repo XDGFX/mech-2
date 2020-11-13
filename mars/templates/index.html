@@ -2,12 +2,14 @@
 <html>
 
 <head>
-    <link rel="stylesheet" href='/static/style.css'>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+    <link rel="stylesheet" href='/static/style.css'>
     <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"
         integrity="sha512-v8ng/uGxkge3d1IJuEo6dJP8JViyvms0cly9pnbfRxT6/31c3dRWxIiwGnMSWwZjHKOuY3EVmijs7k1jz/9bLA=="
         crossorigin="anonymous"></script>
     <script defer src="https://use.fontawesome.com/releases/v5.14.0/js/all.js"></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Goldman&display=swap" rel="stylesheet">
 
 
     <!-- SOCKET.IO INITIALISATION -->
@@ -27,72 +29,228 @@
 
     <section class="section">
 
+        <div class="columns">
+            <div class="column is-narrow">
 
-        <!-- VIDEO FEED -->
-        <div class="container">
-            <figure class="image is-16by9">
-                <img src="/video_feed" id="video_feed">
-                <script type="text/javascript">
-                    function reload_video_feed() {
-                        var d = new Date();
-                        document.getElementById("video_feed").src = "/video_feed?a=" + d.getTime();
-                    }
-                </script>
-            </figure>
-        </div>
+                <!-- MARKERS TABLE -->
+                <div id="markers_container">
+                    <table class="table" style="width: 320px;">
+                        <thead>
+                            <tr>
+                                <th>X</th>
+                                <th>Y</th>
+                                <th>A</th>
+                            </tr>
+                        </thead>
+                        <tbody id="markers_table">
 
-        <!-- CONTROLLS -->
-        <div class="container">
-            <div class="buttons is-centered">
-                <button class="button" onclick="socket.emit('connect_camera')">Connect Camera</button>
-                <button class="button" onclick="reload_video_feed()">Reload Stream</button>
-                <button class="button" onclick="socket.emit('start_engineer')">Start Engineer Tasks</button>
-            </div>
-        </div>
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
 
-        <!-- MARKERS TABLE -->
-        <div class="container">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>X</th>
-                        <th>Y</th>
-                        <th>A</th>
-                    </tr>
-                </thead>
-                <tbody id="markers_table">
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
 
-                </tbody>
-            </table>
-            <script>
-                socket.on('update_markers', function (data) {
-                    table_data = ""
-                    markers = JSON.parse(data)
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
 
-                    for (i = 0; i < markers.length; i++) {
-                        if (markers[i] == 0) {
-                            table_data += `
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+
+                            <tr>
+                                <th>?</th>
+                                <th>?</th>
+                                <th>?</th>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <script>
+                        socket.on('update_markers', function (data) {
+                            table_data = ""
+                            markers = JSON.parse(data)
+
+                            for (i = 0; i < markers.length; i++) {
+                                if (markers[i] == 0) {
+                                    table_data += `
                             <tr>
                                 <th>?</th>
                                 <th>?</th>
                                 <th>?</th>
                             </tr>
                             `
-                        } else {
-                            table_data += `
+                                } else {
+                                    table_data += `
                             <tr>
                                 <th>${markers[i][0]}</th>
                                 <th>${markers[i][1]}</th>
                                 <th>${markers[i][2]}</th>
                             </tr>
                             `
-                        }
-                    }
+                                }
+                            }
 
-                    document.getElementById("markers_table").innerHTML = table_data
-                });
-            </script>
+                            document.getElementById("markers_table").innerHTML = table_data
+                        });
+                    </script>
+                </div>
+
+            </div>
+            <div class="column">
+
+                <h1 class="title has-text-centered">SATELLITE LIVE FEED</h1>
+
+                <!-- VIDEO FEED -->
+                <div class="container">
+                    <figure class="image is-16by9">
+                        <img src="static/static.png" id="video_feed">
+                        <script type="text/javascript">
+                            function reload_video_feed() {
+                                var d = new Date();
+                                document.getElementById("video_feed").src = "/video_feed?a=" + d.getTime();
+                            }
+                        </script>
+                    </figure>
+
+                    <img src="static/mars-small.png" style="position: absolute;	bottom: -70px; right: -100px;">
+                </div>
+
+                <!-- CONTROLS -->
+                <div class="container">
+                    <div class="buttons is-centered">
+                        <button class="button" onclick="socket.emit('connect_camera')">Connect Camera</button>
+                        <button class="button" onclick="reload_video_feed()">Reload Stream</button>
+                        <button class="button" onclick="socket.emit('start_engineer')">Start Engineer Tasks</button>
+                        <button class="button" onclick="socket.emit('stop_engineer')">Stop Engineer Tasks</button>
+                        <button class="button" onclick="socket.emit('increment_engineer_task')">Next Task</button>
+                        <button class="button" onclick="socket.emit('decrement_engineer_task')">Prev Task</button>
+                        <!-- <button class="button" onclick="socket.emit('start_ui_logic')">Connect UI Logic</button> -->
+                    </div>
+
+                    <div class="container has-text-centered">
+                        <p id="logic"></p>
+
+                        <script>
+                            socket.on("update_logic", function (data) {
+                                markers = JSON.parse(data)
+                                document.getElementById("logic").innerHTML = data
+                            });
+                        </script>
+                    </div>
+                </div>
+
+            </div>
         </div>
+
+
+
+
     </section>
 
 

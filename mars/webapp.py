@@ -7,23 +7,27 @@ Mechatronics 2
 ~ Callum Morrison, 2020
 """
 
+import logging
 import os
 import threading
 import time
 
+import redis
 from flask import Flask, Response, render_template
 from flask_socketio import SocketIO, emit, send
-from mars import cam, logs, settings, logic
 
+from mars import cam, logic, logs, settings
+
+# --- INITIALISATION ---
 log = logs.create_log(__name__)
 
 app = Flask(__name__)
+sio = SocketIO(app, async_mode='threading', log=None)
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
-sio = SocketIO(app, async_mode='threading')
-
-
-# --- INITIALISATION ---
 cam = cam.camera()
+
+r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
 
 def serve():
@@ -74,4 +78,31 @@ def connect_camera():
 
 @sio.on('start_engineer')
 def start_engineer():
-    logic.engineer().next_task()
+    logic.engineer().setup()
+    logic.engineer().engineer_complete_tasks()
+
+
+@sio.on('stop_engineer')
+def stop_engineer():
+    logic.engineer().setup()
+
+
+@sio.on('increment_engineer_task')
+def increment_engineer_task():
+    r.incr("engineer_current_task")
+    logic.engineer().engineer_complete_tasks()
+
+
+@sio.on('decrement_engineer_task')
+def decrement_engineer_task():
+    r.decr("engineer_current_task")
+    logic.engineer().engineer_complete_tasks()
+
+
+@sio.on('start_ui_logic')
+def start_ui_logic():
+    logic.common().ui_update_enabled = False
+    time.sleep(2 / settings.FRAMERATE)
+    logic.common().ui_update_enabled = True
+
+    logic.common().update_ui()
