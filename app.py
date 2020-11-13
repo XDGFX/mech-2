@@ -27,5 +27,6 @@ elif os.environ.get("ENVIRONMENT") == "DEV_COMMS":
     c = commands()
     c.start_comms()
     sleep(2)
-    c.move("alien", 500, -20)
+    c.move("alien", 200, -54)
+    sleep(20)
     c.stop_comms()

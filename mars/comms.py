@@ -33,6 +33,11 @@ class communications:
             "ec2-3-10-235-26.eu-west-2.compute.amazonaws.com", 31415, 60)
         log.info("Comms object created")
 
+        self.message_interpretation = {
+            "stopped": 0b000000001,   # Device is not moving
+            "moving":  0b000000010   # Device is moving
+        }
+
         self.moving = {
             "alien": False,
             "engineer": False
@@ -54,8 +59,7 @@ class communications:
             log.info("Connection succesful")
             # Subscribe to all channels
             for t in self.topics:
-                for c in self.topics[t]:
-                    self.client.subscribe(c)
+                self.client.subscribe(self.topics[t][5])
         else:
             log.error("Something went wrong - exit code: " + str(rc))
 
@@ -67,44 +71,20 @@ class communications:
         data = int(msg.payload.rstrip(b'\x00'))
         log.info(msg.topic + " Updated to " +
                  str(data))
-        if self.sent:
-            log.info("message recieved is message sent")
-            self.sent = False
-            return
+        if msg.topic in self.topics["alien"]:
+            log.info("message type alien")
+            self.interpreter("alien", data)
+
+        elif msg.topic in self.topics["engineer"]:
+            log.info("message type engineer")
+            self.interpreter("engineer", data)
+
+        elif msg.topic in self.topics["compound"]:
+            log.info("message type compound")
+            self.interpreter("compound", data)
+
         else:
-            if msg.topic in self.topics["alien"]:
-                log.info("message type alien")
-                indx = topics["alien"].index(msg.topic)
-                if indx == 1:
-                    if data == 1:
-                        # robot is moving
-                        log.info("Alien is moving")
-                        self.moving["alien"] = True
-                    elif data == 2:
-                        # robot has finished moving
-                        log.info("Alien stopped moving")
-                        self.moving["alien"] = False
-                    else:
-                        # robot has not recieved the data or an error occurred
-                        log.error("Alien did not recieve information")
-                elif indx == 3:
-                    if data == 1:
-                        log.info("Alien is stopping")
-                        self.moving["alien"] = False
-                    else:
-                        log.error(
-                            "Alien did not recieve information")
-                else:
-                    log.warning("unknown channel message recieved")
-
-            elif msg.topic in self.topics["engineer"]:
-                log.info("message type engineer")
-
-            elif msg.topic in self.topics["compound"]:
-                log.info("message type compound")
-
-            else:
-                log.error("channel error")
+            log.error("channel error")
 
     def start_listening(self):
         """
@@ -128,6 +108,17 @@ class communications:
         self.client.publish(channel, payload)
         self.sent = True
         log.info("Data_published = " + payload + " On channel: " + channel)
+
+    def interpreter(self, device, data):
+        if data == self.message_interpretation["stopped"]:
+            log.info(device + " has stopped")
+            self.moving[device] = False
+        elif data == self.message_interpretation["moving"]:
+            log.info(device + " is moving")
+            self.moving[device] = True
+        else:
+            log.error("Unknown message from: " +
+                      device + " data = " + str(data))
 
 
 class commands:
@@ -174,6 +165,7 @@ class commands:
         time.sleep(2)
 
     def stop_comms(self):
+        time.sleep(2)
         self.comms.stop_listening()
 
     def send_command(self, device, instruction, payload):

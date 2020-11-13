@@ -23,3 +23,15 @@ MARKER_RADIUS = 5
 
 # General variables for communications
 TEAM_NAME = "ALIEN_SELF_ISOLATION"
+
+# Map of channels and functions
+DATA_CHANNELS = {
+    0: "settings",
+    1: "move",
+    2: "adjust",
+    3: "stop",
+    4: "function",
+    5: "recieve",
+    6: "none",
+    7: "none",
+}
