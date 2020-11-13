@@ -73,11 +73,19 @@ class coords:
                 tvecs[0][0] * settings.MARKER_SMOOTHING
             y_pos = old_marker[1] * (1 - settings.MARKER_SMOOTHING) + \
                 tvecs[0][1] * settings.MARKER_SMOOTHING
-            yaw = old_marker[2] * (1 - settings.MARKER_SMOOTHING) + \
-                yaw * settings.MARKER_SMOOTHING
         else:
             x_pos = tvecs[0][0]
             y_pos = tvecs[0][1]
+
+        # Don't smooth if angle switches sign from previous (loop round 180 to -180)
+        try:
+            sign_change = (yaw < 0) != (old_marker[2] < 0)
+        except TypeError:
+            sign_change = True
+
+        if not sign_change:
+            yaw = old_marker[2] * (1 - settings.MARKER_SMOOTHING) + \
+                yaw * settings.MARKER_SMOOTHING
 
         # Assign markers in format [x_pos, y_pos, yaw]
         self.markers[index] = [x_pos, y_pos, yaw]
@@ -157,17 +165,27 @@ class coords:
         direction = -pos_source[2]
 
         delta_x = pos_target[0] - pos_source[0]
-        delta_y = pos_target[1] - pos_source[1]
+        delta_y = pos_source[1] - pos_target[1]
 
         # Add extra rotation to point towards the target
-        direction -= math.atan(delta_x / delta_y)
+        try:
+            direction += math.atan(delta_x / delta_y)
+        except ZeroDivisionError:
+            direction += math.pi / 2
 
-        # If delta_y is negative, angle correction by adding pi
-        if delta_y < 0:
-            direction += math.pi
+        # If delta_y is positive, angle correction by adding pi
+        if delta_y > 0:
+            direction -= math.pi
+
+        # Manual angle correction
+        direction = (math.pi - direction) % (2 * math.pi)
+
+        # Convert to +/- pi
+        if direction > math.pi:
+            direction = -2 * math.pi + direction
 
         log.debug(
-            f"Vector {source} > {target}: Magnitude = {magnitude} | Direction = {direction}")
+            f"Vector {source} > {target}: Magnitude = {magnitude:.2f} | Direction = {direction / math.pi * 180:.2f}")
 
         return magnitude, direction
 

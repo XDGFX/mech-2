@@ -69,8 +69,8 @@ class engineer:
 
                 # If within target radius of target marker
                 if magnitude < settings.MARKER_RADIUS:
-                    log.debug("Engineer within target marker radius!")
-                    log.debug("Moving to next marker...")
+                    log.info("Engineer within target marker radius!")
+                    log.info("Moving to next marker...")
 
                     # Update current position
                     self.current_marker = target_route[0]
