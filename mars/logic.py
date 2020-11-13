@@ -7,51 +7,89 @@ Mechatronics 2
 ~ Callum Morrison, 2020
 """
 
+import json
 import time
+
+import redis
 
 from mars import coords, logs, settings
 from mars.comms import commands
 
 log = logs.create_log(__name__)
 
+r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
-class common:
+
+def update_ui():
     """
-    Used for global parameters and shared functions.
+    Passes general information to the UI.
     """
-    pass
-    # def __init__(self):
-    #     engineer.next_task()
+    from mars.webapp import ws_send
+
+    # Send current data to the UI
+    ws_send("update_logic", json.dumps(
+        {
+            "engineer": {
+                "current_task": int(r.get("engineer_current_task")),
+                "current_marker": int(r.get("engineer_current_marker"))
+            },
+            "alien": {
+                "current_marker": 9999
+            }
+        }
+    ))
 
 
 class engineer:
-    """
-    Used for functions and states specific to the Engineer.
-    """
-
     def __init__(self):
-
         # General route the Engineer wishes to take:
         # - Start at launch pad
         # - Complete tasks in order: 1, 2, 3
         # - Return to launch pad
         self.desired_path = [2, 17, 9, 12, 2]
 
+    def setup(self):
+        """
+        Setup database keys and initial values.
+        """
         # Index of the task which needs to be completed
-        self.current_task = 0
+        r.set("engineer_current_task", 0)
 
         # Last known position in the compound
-        self.current_marker = 0
+        r.set("engineer_current_marker", 0)
+
+        r.set("engineer_tasks_enabled", 0)
+
+    def engineer_complete_tasks(self):
+        """
+        Function to go through all tasks and complete them in sequence.
+        """
+        # Toggle to cancel tasks
+        r.set("engineer_tasks_enabled", 0)
+        time.sleep(2 / settings.FRAMERATE)
+        r.set("engineer_tasks_enabled", 1)
+
+        while int(r.get("engineer_tasks_enabled")):
+            self.next_task()
 
     def next_task(self):
         """
-        Aims to complete the next task in the task list
+        Aims to complete the next task in the task list for the Engineer.
         """
 
+        update_ui()
+
         # 1. Determine route to get to next task
-        self.current_marker = self.desired_path[self.current_task]
-        target_marker = self.desired_path[self.current_task + 1]
-        target_route = coords.route().pathfinder(self.current_marker, target_marker)
+        r.set("engineer_current_marker",
+              self.desired_path[int(r.get("engineer_current_task"))])
+
+        target_marker = self.desired_path[int(
+            r.get("engineer_current_task")) + 1]
+
+        target_route = coords.route().pathfinder(
+            int(r.get("engineer_current_marker")), target_marker)
+
+        log.info(f"Engineer working on next task: {target_route}")
 
         reached_target = False
 
@@ -60,12 +98,21 @@ class engineer:
             reached_marker = False
 
             while not reached_marker:
+                # Break from loops if required
+                if not int(r.get("engineer_tasks_enabled")):
+                    return
+
                 # Save start time to synchronise framerate
                 start_time = time.time()
 
-                # Calculate distance to next marker in route
-                magnitude, direction = coords.coords().calculate_vector(
-                    "engineer", target_route[0])
+                try:
+                    # Calculate distance to next marker in route
+                    magnitude, direction = coords.coords().calculate_vector(
+                        "engineer", target_route[0])
+
+                except TypeError:
+                    log.error("Invalid target route supplied")
+                    return
 
                 # If within target radius of target marker
                 if magnitude < settings.MARKER_RADIUS:
@@ -73,7 +120,7 @@ class engineer:
                     log.info("Moving to next marker...")
 
                     # Update current position
-                    self.current_marker = target_route[0]
+                    r.set("engineer_current_marker", target_route[0])
 
                     # Remove from route
                     target_route.pop(0)
@@ -88,7 +135,7 @@ class engineer:
                     if alien_distance < settings.DETECTION_RADIUS:
                         log.debug("Engineer within hearing distance of alien!")
                         new_target_route = coords.route().pathfinder(
-                            self.current_marker, target_marker, avoid=alien.current_marker)
+                            int(r.get("engineer_current_marker")), target_marker, avoid=alien.current_marker)
 
                         # Check if no route has been found, if so throw a fit
                         if not new_target_route:
@@ -115,9 +162,14 @@ class engineer:
                 if time_remain > 0:
                     time.sleep(time_remain)
 
+                update_ui()
+
             if not target_route:
                 # Route is complete
                 reached_target = True
+
+        # Move to next task
+        r.incr("engineer_current_task")
 
 
 class alien:
