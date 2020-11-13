@@ -32,9 +32,11 @@
         <div class="columns">
             <div class="column is-narrow">
 
+                <h2 class="heading has-text-centered">Marker Positions</h2>
+
                 <!-- MARKERS TABLE -->
                 <div id="markers_container">
-                    <table class="table" style="width: 320px;">
+                    <table class="table has-text-centered" style="width: 320px;">
                         <thead>
                             <tr>
                                 <th>X</th>
@@ -218,23 +220,79 @@
                         </script>
                     </figure>
 
-                    <img src="static/mars-small.png" style="position: absolute;	bottom: -70px; right: -100px;">
+                    <img src="static/mars-small.png" style="position: absolute; top: -70px; right: -100px;">
+                    <img src="static/live.png" style="position: absolute; top: 25px; left: 25px;">
+
+                    <!-- MISSION TIMER -->
+                    <p id="timer" style="position: absolute; top: 30px; left: 100px;"></p>
+
+                    <script>
+                        // Set the date we're counting down to
+                        var countDownDate = new Date("Jul 5, 2020 15:37:25").getTime();
+
+                        // Update the count down every 1 second
+                        var x = setInterval(function () {
+
+                            // Get today's date and time
+                            var now = new Date().getTime();
+
+                            // Find the distance between now and the count down date
+                            var distance = countDownDate - now;
+
+                            // Time calculations for days, hours, minutes and seconds
+                            var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                            var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                            var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                            var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                            // Output the result in an element with id="demo"
+                            document.getElementById("timer").innerHTML = "T + " + -days + "d " + (-hours - 1) + "h "
+                                + (-minutes - 1) + "m " + (-seconds - 1) + "s ";
+
+                        }, 1000);
+                    </script>
                 </div>
 
                 <!-- CONTROLS -->
                 <div class="container">
-                    <div class="buttons is-centered">
-                        <button class="button" onclick="socket.emit('connect_camera')">Connect Camera</button>
-                        <button class="button" onclick="reload_video_feed()">Reload Stream</button>
-                        <button class="button" onclick="socket.emit('start_engineer')">Start Engineer Tasks</button>
-                        <button class="button" onclick="socket.emit('stop_engineer')">Stop Engineer Tasks</button>
-                        <button class="button" onclick="socket.emit('increment_engineer_task')">Next Task</button>
-                        <button class="button" onclick="socket.emit('decrement_engineer_task')">Prev Task</button>
-                        <!-- <button class="button" onclick="socket.emit('start_ui_logic')">Connect UI Logic</button> -->
+                    <div class="columns">
+                        <div class="column">
+                            <h2 class="heading has-text-centered">Camera Controls</h2>
+                            <div class="buttons is-centered">
+                                <button class="button" onclick="socket.emit('connect_camera')">Connect Camera</button>
+                                <button class="button" onclick="reload_video_feed()">Reload Stream</button>
+                                <!-- <button class="button" onclick="socket.emit('start_ui_logic')">Connect UI Logic</button> -->
+                            </div>
+                        </div>
+                        <div class="column">
+                            <h2 class="heading has-text-centered">Engineer Controls</h2>
+                            <div class="buttons is-centered has-addons">
+                                <button class="button" disabled>Engineer</button>
+                                <button class="button" onclick="socket.emit('start_engineer')">Start</button>
+                                <button class="button" onclick="socket.emit('stop_engineer')">Stop</button>
+                                <button class="button" onclick="socket.emit('increment_engineer_task')">Next</button>
+                                <button class="button" onclick="socket.emit('decrement_engineer_task')">Prev</button>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <h2 class="heading has-text-centered">
+                                Ả̷̳̞͈̻̏l̴̢̡̛̹̮͕̳̜̙̝̭͈̫̟̣̦̏̇͆̀̑̐͗̔̎̆̿̃̕͝i̷̡̛͓̼̙͍͓̯̪̮͆̂͒ḙ̷̀̇̆̐͂̐̑͆̃̄̂͑̅n̸͇͂̆
+                                ̷̙̤͈̠̗͚͍̬̠̈́̐͒̀͗͝Ċ̶̢̞̮͓̫́̃̀͑̀̊͒o̶̢̬̪̖͖̘̲͕̺̺͚͊́̈͌̈̌̆̇͛͒̍̇͘͜͝n̶̛̤͙͂́̍́̋̊̔̓͗́̒̾͒t̸̯̬̄ŗ̸̪̹̳̞̮̯̟͇̟̮̘̫̳͐͐̕ͅo̸̱̬̗͒̉̐̽̆̔̔̎̽l̶͉̦̗̳̭̯̝͋̆͋͐̑̅̔̔̒̏̒̒̉͘͝ͅş̵̛͎͚͚͉̮͉̑̊́͛̿̑̑͐
+                            </h2>
+                            <div class="buttons is-centered has-addons">
+                                <button class="button" disabled>Alien</button>
+                                <button class="button" onclick="socket.emit('start_alien')">Start</button>
+                                <button class="button" onclick="socket.emit('stop_alien')">Stop</button>
+                            </div>
+                        </div>
                     </div>
 
+
+
                     <div class="container has-text-centered">
-                        <p id="logic"></p>
+                        <p id="logic">
+                            {"engineer": {"current_task": 0, "current_marker": 2}, "alien": {"current_marker": 9}}
+                        </p>
 
                         <script>
                             socket.on("update_logic", function (data) {
