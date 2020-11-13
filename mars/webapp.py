@@ -8,15 +8,14 @@ Mechatronics 2
 """
 
 import logging
-import os
 import threading
 import time
 
 import redis
 from flask import Flask, Response, render_template
-from flask_socketio import SocketIO, emit, send
+from flask_socketio import SocketIO
 
-from mars import cam, logic, logs, settings
+from mars import cam, coords, logic, logs, settings
 
 # --- INITIALISATION ---
 log = logs.create_log(__name__)
@@ -108,3 +107,16 @@ def start_alien():
 @sio.on('stop_alien')
 def stop_alien():
     logic.alien().setup()
+
+
+@sio.on('initialise_doors')
+def initialise_doors():
+    coords.route().initialise_doors()
+
+
+@sio.on('toggle_doors')
+def toggle_doors(data):
+    index = data["index"]
+    state = data["state"]
+
+    coords.route().doors(index, state)

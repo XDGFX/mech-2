@@ -26,6 +26,8 @@ def update_ui():
     """
     from mars.webapp import ws_send
 
+    doors_state = json.loads(r.get("doors_state"))
+
     # Send current data to the UI
     ws_send("update_logic", json.dumps(
         {
@@ -35,7 +37,12 @@ def update_ui():
             },
             "alien": {
                 "current_marker": int(r.get("alien_current_marker"))
-            }
+            },
+            "doors": {
+                "A": doors_state[0],
+                "B": doors_state[1],
+                "C": doors_state[2],
+                "D": doors_state[3]}
         }
     ))
 

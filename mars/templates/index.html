@@ -29,6 +29,8 @@
 
     <section class="section">
 
+        <h1 class="title has-text-centered">SATELLITE LIVE FEED</h1>
+
         <div class="columns">
             <div class="column is-narrow">
 
@@ -206,8 +208,6 @@
             </div>
             <div class="column">
 
-                <h1 class="title has-text-centered">SATELLITE LIVE FEED</h1>
-
                 <!-- VIDEO FEED -->
                 <div class="container">
                     <figure class="image is-16by9">
@@ -219,6 +219,20 @@
                             }
                         </script>
                     </figure>
+
+                    <div class="container has-text-centered" style="position: absolute; width: 100%; bottom: 20px;">
+                        <p id="logic">
+                            {"engineer": {"current_task": 0, "current_marker": 2}, "alien": {"current_marker": 9},
+                            "doors": {"A": true, "B": true, "C": true, "D": true}}
+                        </p>
+
+                        <script>
+                            socket.on("update_logic", function (data) {
+                                markers = JSON.parse(data)
+                                document.getElementById("logic").innerHTML = data
+                            });
+                        </script>
+                    </div>
 
                     <img src="static/mars-small.png" style="position: absolute; top: -70px; right: -100px;">
                     <img src="static/live.png" style="position: absolute; top: 25px; left: 25px;">
@@ -287,19 +301,51 @@
                         </div>
                     </div>
 
-
-
-                    <div class="container has-text-centered">
-                        <p id="logic">
-                            {"engineer": {"current_task": 0, "current_marker": 2}, "alien": {"current_marker": 9}}
-                        </p>
-
-                        <script>
-                            socket.on("update_logic", function (data) {
-                                markers = JSON.parse(data)
-                                document.getElementById("logic").innerHTML = data
-                            });
-                        </script>
+                    <!-- DOOR CONTROLS -->
+                    <h2 class="heading has-text-centered">Door Controls</h2>
+                    <div class="columns">
+                        <div class="column">
+                            <div class="buttons is-centered">
+                                <button class="button" onclick="socket.emit('initialise_doors')">Initialise
+                                    Doors</button>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="buttons is-centered has-addons">
+                                <button class="button" disabled>A</button>
+                                <button class="button"
+                                    onclick="socket.emit('toggle_doors', {'index': 0, 'state': true})">1</button>
+                                <button class="button"
+                                    onclick="socket.emit('toggle_doors', {'index': 0, 'state': false})">0</button>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="buttons is-centered has-addons">
+                                <button class="button" disabled>B</button>
+                                <button class="button"
+                                    onclick="socket.emit('toggle_doors', {'index': 1, 'state': true})">1</button>
+                                <button class="button"
+                                    onclick="socket.emit('toggle_doors', {'index': 1, 'state': false})">0</button>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="buttons is-centered has-addons">
+                                <button class="button" disabled>C</button>
+                                <button class="button"
+                                    onclick="socket.emit('toggle_doors', {'index': 2, 'state': true})">1</button>
+                                <button class="button"
+                                    onclick="socket.emit('toggle_doors', {'index': 2, 'state': false})">0</button>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="buttons is-centered has-addons">
+                                <button class="button" disabled>D</button>
+                                <button class="button"
+                                    onclick="socket.emit('toggle_doors', {'index': 3, 'state': true})">1</button>
+                                <button class="button"
+                                    onclick="socket.emit('toggle_doors', {'index': 3, 'state': false})">0</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

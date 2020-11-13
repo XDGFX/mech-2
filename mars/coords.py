@@ -16,8 +16,12 @@ import redis
 
 from mars import logs, settings
 from mars.comms import commands
+from mars.logic import update_ui
 
 log = logs.create_log(__name__)
+
+r = redis.Redis(host='localhost', port=6379,
+                db=0, decode_responses=True)
 
 
 class coords:
@@ -25,9 +29,6 @@ class coords:
         # Initialise markers database
         # self.db_file = os.path.join("mars", "cam_data", "markers.db")
         num_markers = 21
-
-        self.r = redis.Redis(host='localhost', port=6379,
-                             db=0, decode_responses=True)
 
         # with sqlite3.connect(self.db_file) as conn:
         #     cursor = conn.cursor()
@@ -97,7 +98,7 @@ class coords:
             return
 
         # with redis.Redis(host='localhost', port=6379, db=0, decode_responses=True) as r:
-        self.r.set(index, json.dumps([x_pos, y_pos, yaw]))
+        r.set(index, json.dumps([x_pos, y_pos, yaw]))
 
         # with sqlite3.connect(self.db_file) as conn:
         #     cursor = conn.cursor()
@@ -137,7 +138,7 @@ class coords:
             #     rows = cursor.fetchone()
 
             try:
-                marker = json.loads(self.r.get(index))
+                marker = json.loads(r.get(index))
             except TypeError:
                 log.warning(f"Invalid marker position for index: {index}!")
                 return [-999, -999, -999]
@@ -248,14 +249,6 @@ class route:
             [20, 12]    # Door 4 / D
         ]
 
-        # Current state of all doors, all open to start
-        self.doors_state = [
-            True,       # Door 1 / A
-            True,       # Door 2 / B
-            True,       # Door 3 / C
-            True        # Door 4 / D
-        ]
-
         # Update shortcuts for alien
         self.allowed_routes_alien = deepcopy(self.allowed_routes)
 
@@ -277,13 +270,29 @@ class route:
         #     1,  # 2 - Front door
         # ]
 
+    def initialise_doors(self):
+        # Current state of all doors, all open to start
+        r.set("doors_state", json.dumps([
+            True,       # Door 1 / A
+            True,       # Door 2 / B
+            True,       # Door 3 / C
+            True        # Door 4 / D
+        ]))
+
+        update_ui()
+
     def doors(self, index, state):
         """
         Opens or closes a door identified by `index`.
         `state` is True for open and False for closed.
         """
-        self.doors_state[index] = state
-        commands.door(index, state)
+        doors_state = json.loads(r.get("doors_state"))
+        doors_state[index] = state
+        r.set("doors_state", json.dumps(doors_state))
+
+        update_ui()
+
+        # commands.door(index, state)
 
     def pathfinder(self, start, finish, shortcuts=False, avoid=None):
         """
@@ -308,7 +317,12 @@ class route:
             allowed_routes = deepcopy(self.allowed_routes)
 
         # Check if doors are locked and adjust route if required
-        for index in range(len(self.doors_state)):
+        doors_state = json.loads(r.get("doors_state"))
+        for index in range(4):
+
+            # Check if door is closed
+            if doors_state[index]:
+                continue
 
             # Only adjust if start point next to a door
             if start in self.markers_doors[index]:

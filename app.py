@@ -7,10 +7,11 @@ Mechatronics 2
 ~ Callum Morrison, 2020
 """
 
-from dotenv import load_dotenv
 import os
-from mars import webapp
 
+from dotenv import load_dotenv
+
+from mars import webapp
 
 load_dotenv()
 
@@ -22,8 +23,9 @@ elif os.environ.get("ENVIRONMENT") == "DEV_WEB":
     webapp.start_server()
 
 elif os.environ.get("ENVIRONMENT") == "DEV_COMMS":
-    from mars.comms import commands
     from time import sleep
+
+    from mars.comms import commands
     c = commands()
     c.start_comms()
     sleep(2)
