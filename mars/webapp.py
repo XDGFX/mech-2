@@ -13,7 +13,7 @@ import time
 
 from flask import Flask, Response, render_template
 from flask_socketio import SocketIO, emit, send
-from mars import cam, logs, settings
+from mars import cam, logs, settings, logic
 
 log = logs.create_log(__name__)
 
@@ -70,3 +70,8 @@ def connect_camera():
     cam.allow_generate = True
 
     cam.generate()
+
+
+@sio.on('start_engineer')
+def start_engineer():
+    logic.engineer().next_task()

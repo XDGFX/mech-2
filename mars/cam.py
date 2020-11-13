@@ -66,17 +66,25 @@ class camera:
             # Save start time to synchronise framerate
             start_time = time.time()
 
-            # Read latest frame from IP camera
-            try:
-                resp = requests.get(self.url, stream=True).raw
-            except Exception as e:
-                log.exception(
-                    "Unexpected error code when connecting to camera!")
-                raise
+            if os.environ.get("REAL_CAM"):
+                try:
+                    _, frame = cv2.VideoCapture(0).read()
+                except Exception as e:
+                    log.exception("Unable to connect to physical camera!")
+                    raise
 
-            # Convert to openCV compatible image
-            frame = np.asarray(bytearray(resp.read()), dtype="uint8")
-            frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
+            else:
+                # Read latest frame from IP camera
+                try:
+                    resp = requests.get(self.url, stream=True).raw
+                except Exception as e:
+                    log.exception(
+                        "Unexpected error code when connecting to IP camera!")
+                    raise
+
+                # Convert to openCV compatible image
+                frame = np.asarray(bytearray(resp.read()), dtype="uint8")
+                frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
 
             # # Convert the image from the camera to Gray scale
             # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)

@@ -136,3 +136,5 @@ dmypy.json
 **/*.elf
 **/*.autosave
 **/*.slxc
+**/markers.db
+dump.rdb

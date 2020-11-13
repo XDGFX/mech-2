@@ -9,21 +9,44 @@ Mechatronics 2
 
 import json
 import math
+import os
+import sqlite3
+import redis
 import time
 from copy import deepcopy
 
 from mars import logs, settings
 from mars.comms import commands
-from mars.webapp import ws_send
 
 log = logs.create_log(__name__)
 
 
 class coords:
     def __init__(self):
+        # Initialise markers database
+        # self.db_file = os.path.join("mars", "cam_data", "markers.db")
         num_markers = 64
 
-        # Array of all aruco codes available
+        self.r = redis.Redis(host='localhost', port=6379,
+                             db=0, decode_responses=True)
+
+        # with sqlite3.connect(self.db_file) as conn:
+        #     cursor = conn.cursor()
+
+        #     query = "CREATE TABLE IF NOT EXISTS markers (marker INTEGER PRIMARY KEY, x REAL, y REAL, a REAL)"
+        #     cursor.execute(query)
+
+        #     # --- This was removed because it would clear the database any time
+        #     # --- a new module tried to access the database
+        #     # # Array of all aruco codes available
+        #     # markers = [(i, 0, 0, 0) for i in range(num_markers)]
+
+        #     # query = "REPLACE INTO markers (marker, x, y, a) VALUES(?, ?, ?, ?)"
+        #     # cursor.executemany(query, markers)
+
+        #     conn.commit()
+
+        # Initialise markers variable for UI
         self.markers = [0] * num_markers
 
         # Corresponding aruco ids
@@ -40,10 +63,35 @@ class coords:
         """
         Save a new position matrix to an aruco code id
         """
-        index = index[0]
+        index = int(index[0])
+
+        old_marker = self.get_pos(index)
+
+        # Smooth changes in marker position
+        if old_marker:
+            x_pos = old_marker[0] * (1 - settings.MARKER_SMOOTHING) + \
+                tvecs[0][0] * settings.MARKER_SMOOTHING
+            y_pos = old_marker[1] * (1 - settings.MARKER_SMOOTHING) + \
+                tvecs[0][1] * settings.MARKER_SMOOTHING
+            yaw = old_marker[2] * (1 - settings.MARKER_SMOOTHING) + \
+                yaw * settings.MARKER_SMOOTHING
+        else:
+            x_pos = tvecs[0][0]
+            y_pos = tvecs[0][1]
 
         # Assign markers in format [x_pos, y_pos, yaw]
-        self.markers[index] = [tvecs[0][0], tvecs[0][1], yaw]
+        self.markers[index] = [x_pos, y_pos, yaw]
+
+        # with redis.Redis(host='localhost', port=6379, db=0, decode_responses=True) as r:
+        self.r.set(index, json.dumps([x_pos, y_pos, yaw]))
+
+        # with sqlite3.connect(self.db_file) as conn:
+        #     cursor = conn.cursor()
+
+        #     query = "REPLACE INTO markers (marker, x, y, a) VALUES (?, ?, ?, ?)"
+        #     cursor.execute(query, (index, x_pos, y_pos, yaw))
+
+        #     conn.commit()
 
         # Only send updated marker positions at required polling interval
         end_time = time.time()
@@ -51,10 +99,9 @@ class coords:
 
         # Update markers on UI
         if time_remain < 0:
+            from mars.webapp import ws_send
             ws_send("update_markers", json.dumps(self.markers))
             self.start_time = time.time()
-
-            self.calculate_vector("engineer", "alien")
 
     def get_pos(self, entity):
         """
@@ -63,9 +110,21 @@ class coords:
         try:
             # Valid for aruco code ids or entity names
             if isinstance(entity, int):
-                return self.markers[entity]
+                index = entity
             else:
-                return self.markers[self.ids[entity]]
+                index = self.ids[entity]
+
+            # with sqlite3.connect(self.db_file) as conn:
+            #     cursor = conn.cursor()
+
+            #     query = "SELECT x, y, a FROM markers WHERE marker = ?"
+            #     cursor.execute(query, (index,))
+
+            #     rows = cursor.fetchone()
+
+            marker = json.loads(self.r.get(index))
+
+            return marker
 
         except Exception as e:
             log.exception(e)
@@ -95,11 +154,17 @@ class coords:
             (pos_target[0] - pos_source[0])**2 + (pos_target[1] - pos_source[1])**2)
 
         # Calculate direction to north by subtracting two angles
-        direction = - pos_source[2]
+        direction = -pos_source[2]
 
-        # Add extra totation to point towards the target
-        direction -= math.atan((pos_target[0] - pos_source[0]) /
-                               (pos_target[1] - pos_source[1]))
+        delta_x = pos_target[0] - pos_source[0]
+        delta_y = pos_target[1] - pos_source[1]
+
+        # Add extra rotation to point towards the target
+        direction -= math.atan(delta_x / delta_y)
+
+        # If delta_y is negative, angle correction by adding pi
+        if delta_y < 0:
+            direction += math.pi
 
         log.debug(
             f"Vector {source} > {target}: Magnitude = {magnitude} | Direction = {direction}")

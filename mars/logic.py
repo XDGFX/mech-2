@@ -7,6 +7,8 @@ Mechatronics 2
 ~ Callum Morrison, 2020
 """
 
+import time
+
 from mars import coords, logs, settings
 from mars.comms import commands
 
@@ -18,6 +20,8 @@ class common:
     Used for global parameters and shared functions.
     """
     pass
+    # def __init__(self):
+    #     engineer.next_task()
 
 
 class engineer:
@@ -56,12 +60,18 @@ class engineer:
             reached_marker = False
 
             while not reached_marker:
+                # Save start time to synchronise framerate
+                start_time = time.time()
+
                 # Calculate distance to next marker in route
                 magnitude, direction = coords.coords().calculate_vector(
                     "engineer", target_route[0])
 
                 # If within target radius of target marker
                 if magnitude < settings.MARKER_RADIUS:
+                    log.debug("Engineer within target marker radius!")
+                    log.debug("Moving to next marker...")
+
                     # Update current position
                     self.current_marker = target_route[0]
 
@@ -76,6 +86,7 @@ class engineer:
 
                     # If within hearing distance, re-calculate route with alien avoidance
                     if alien_distance < settings.DETECTION_RADIUS:
+                        log.debug("Engineer within hearing distance of alien!")
                         new_target_route = coords.route().pathfinder(
                             self.current_marker, target_marker, avoid=alien.current_marker)
 
@@ -83,6 +94,7 @@ class engineer:
                         if not new_target_route:
                             log.error(
                                 f"The engineer can't find any route to it's target: {target_marker}!")
+                            continue
 
                         # Check if new route is in the same direction, or a new direction
                         if target_route[1] == new_target_route[1]:
@@ -93,7 +105,15 @@ class engineer:
 
                     else:
                         # Send a command to go to the first marker in the route
-                        commands.move("engineer", magnitude, direction)
+                        # commands.move("engineer", magnitude, direction)
+                        pass
+
+                # Wait until the next frame is required
+                end_time = time.time()
+                time_remain = start_time + 1 / settings.FRAMERATE - end_time
+
+                if time_remain > 0:
+                    time.sleep(time_remain)
 
             if not target_route:
                 # Route is complete

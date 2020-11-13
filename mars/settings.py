@@ -7,7 +7,7 @@ Mechatronics 2
 """
 
 # Camera framerate in FPS
-FRAMERATE = 30
+FRAMERATE = 10
 
 # General data transmission rate for UI
 DATARATE = 1
@@ -16,10 +16,13 @@ DATARATE = 1
 COMMSRATE = 1
 
 # Radius within which the Engineer can hear / see the Alien
-DETECTION_RADIUS = 20
+DETECTION_RADIUS = 0
 
 # Radius within which the Engineer has reached a marker
 MARKER_RADIUS = 5
+
+# How much aruco positions can change with each update; 1 is 100% the new value
+MARKER_SMOOTHING = 0.3
 
 # General variables for communications
 TEAM_NAME = "ALIEN_SELF_ISOLATION"

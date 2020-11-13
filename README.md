@@ -40,3 +40,18 @@ Adjustable variables may be stored in two locations:
 
 The former should be used for variables which may be changed across all instances of the code, for example calibration parameters.
 The latter should be used for variables which may change between environments, for example IP addresses.
+
+## Start Redis database
+1. Go to mech-2 folder
+
+2.  ```bash
+    $ redis-server
+    ```
+
+3.  ```bash
+    $ redis-cli
+    ```
+
+4.  ```redis
+    > config set stop-writes-on-bgsave-error no
+    ```
