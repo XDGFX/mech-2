@@ -99,10 +99,12 @@ def decrement_engineer_task():
     logic.engineer().engineer_complete_tasks()
 
 
-@sio.on('start_ui_logic')
-def start_ui_logic():
-    logic.common().ui_update_enabled = False
-    time.sleep(2 / settings.FRAMERATE)
-    logic.common().ui_update_enabled = True
+@sio.on('start_alien')
+def start_alien():
+    logic.alien().setup()
+    logic.alien().alien_follow()
 
-    logic.common().update_ui()
+
+@sio.on('stop_alien')
+def stop_alien():
+    logic.alien().setup()

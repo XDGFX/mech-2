@@ -34,7 +34,7 @@ def update_ui():
                 "current_marker": int(r.get("engineer_current_marker"))
             },
             "alien": {
-                "current_marker": 9999
+                "current_marker": int(r.get("alien_current_marker"))
             }
         }
     ))
@@ -56,7 +56,7 @@ class engineer:
         r.set("engineer_current_task", 0)
 
         # Last known position in the compound
-        r.set("engineer_current_marker", 0)
+        r.set("engineer_current_marker", 2)
 
         r.set("engineer_tasks_enabled", 0)
 
@@ -79,7 +79,7 @@ class engineer:
 
         update_ui()
 
-        # 1. Determine route to get to next task
+        # Determine route to get to next task
         r.set("engineer_current_marker",
               self.desired_path[int(r.get("engineer_current_task"))])
 
@@ -177,5 +177,73 @@ class alien:
     Used for functions and states specific to the Alien.
     """
 
-    def __init__(self):
-        self.current_marker = 99
+    def setup(self):
+        """
+        Setup database keys and initial values.
+        """
+        # Last known position in the compound
+        r.set("alien_enabled", 0)
+        r.set("alien_current_marker", 9)
+
+    def alien_follow(self):
+        """
+        Start the Alien following the Engineer.
+        """
+        # Toggle to cancel existing tasks
+        r.set("alien_enabled", 0)
+        time.sleep(2 / settings.FRAMERATE)
+        r.set("alien_enabled", 1)
+
+        while int(r.get("alien_enabled")):
+            # Determine route to get to next task
+            target_marker = int(r.get("engineer_current_marker"))
+
+            target_route = coords.route().pathfinder(
+                int(r.get("alien_current_marker")), target_marker, shortcuts=True)
+
+            log.info(f"Alien following route: {target_route}")
+
+            reached_marker = False
+
+            while not reached_marker:
+                # Break from loops if required
+                if not int(r.get("alien_enabled")):
+                    return
+
+                # Save start time to synchronise framerate
+                start_time = time.time()
+
+                try:
+                    # Calculate distance to next marker in route
+                    magnitude, direction = coords.coords().calculate_vector(
+                        "alien", target_route[0])
+
+                except TypeError:
+                    log.error("Invalid target route supplied")
+                    return
+
+                # If within target radius of target marker
+                if magnitude < settings.MARKER_RADIUS:
+                    log.info("Alien within target marker radius!")
+                    log.info("Moving to next marker...")
+
+                    # Update current position
+                    r.set("alien_current_marker", target_route[0])
+
+                    # Remove from route
+                    target_route.pop(0)
+                    reached_marker = True
+
+                else:
+                    # Send a command to go to the first marker in the route
+                    # commands.move("engineer", magnitude, direction)
+                    pass
+
+                # Wait until the next frame is required
+                end_time = time.time()
+                time_remain = start_time + 1 / settings.FRAMERATE - end_time
+
+                if time_remain > 0:
+                    time.sleep(time_remain)
+
+                update_ui()
