@@ -7,10 +7,10 @@ Mechatronics 2
 ~ Callum Morrison, 2020
 """
 
-import os
 from dotenv import load_dotenv
-
+import os
 from mars import webapp
+
 
 load_dotenv()
 

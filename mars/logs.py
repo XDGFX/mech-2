@@ -8,6 +8,7 @@ Mechatronics 2
 """
 
 import logging
+import os
 
 
 class CustomFormatter(logging.Formatter):
@@ -40,7 +41,10 @@ def create_log(name):
     # Create logger
     log = logging.getLogger(name)
 
-    log.setLevel(logging.DEBUG)
+    if os.environ.get("LOG_LEVEL") == "DEBUG":
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
 
     # Add streamhandler to logger
     ch = logging.StreamHandler()

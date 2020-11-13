@@ -9,11 +9,10 @@ Mechatronics 2
 
 import json
 import math
-import os
-import sqlite3
-import redis
 import time
 from copy import deepcopy
+
+import redis
 
 from mars import logs, settings
 from mars.comms import commands
@@ -25,7 +24,7 @@ class coords:
     def __init__(self):
         # Initialise markers database
         # self.db_file = os.path.join("mars", "cam_data", "markers.db")
-        num_markers = 64
+        num_markers = 21
 
         self.r = redis.Redis(host='localhost', port=6379,
                              db=0, decode_responses=True)
@@ -88,7 +87,14 @@ class coords:
                 yaw * settings.MARKER_SMOOTHING
 
         # Assign markers in format [x_pos, y_pos, yaw]
-        self.markers[index] = [x_pos, y_pos, yaw]
+        try:
+            self.markers[index] = [
+                round(x_pos, 4),
+                round(y_pos, 4),
+                round(yaw, 4)]
+        except IndexError:
+            # The camera has accidentally detected a marker we're not using, discard
+            return
 
         # with redis.Redis(host='localhost', port=6379, db=0, decode_responses=True) as r:
         self.r.set(index, json.dumps([x_pos, y_pos, yaw]))
@@ -130,7 +136,11 @@ class coords:
 
             #     rows = cursor.fetchone()
 
-            marker = json.loads(self.r.get(index))
+            try:
+                marker = json.loads(self.r.get(index))
+            except TypeError:
+                log.warning(f"Invalid marker position for index: {index}!")
+                return [-999, -999, -999]
 
             return marker
 
