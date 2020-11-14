@@ -10,46 +10,39 @@ from mars import commands as cmd
 import paho.mqtt.client as mqtt  # This is the library to do the MQTT communications
 import time  # This is the library that will allow us to use the sleep function
 import threading
+import redis
+import json
 
 log = logs.create_log(__name__)
+
+connected = threading.Event()
+
+
+db = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
 
 class communications:
 
-    def __init__(self, topics_to_listen, cmd_to_execute):
+    def __init__(self):
         """
         Constructor of the class
         """
-        self.sent = False
-        self.topics = topics_to_listen
-        self.commands = cmd_to_execute
-        self.acknowledged = False
-        self.message_recieved_event = threading.Event()
+        self.channels = {}
+        for item in settings.TOPICS:
+            self.channels[item] = [settings.TEAM_NAME +
+                                   "-" + item + "/" + str(n) for n in range(1, 9)]
+
+        self.device_functions = {
+            "stopped": self.device_stop_status,
+            "moving":  self.device_move_status,
+            "action":  self.device_action_status
+        }
+
         self.client = mqtt.Client()
         self.client.on_connect = self.__on_connect
         self.client.on_message = self.__on_message
         self.client.username_pw_set("student", password="smartPass")
-        self.client.connect(
-            "ec2-3-10-235-26.eu-west-2.compute.amazonaws.com", 31415, 60)
-        log.info("Comms object created")
-
-        self.message_interpretation = {
-            "stopped": 0b000000001,   # Device is not moving
-            "moving":  0b000000010   # Device is moving
-        }
-
-        self.moving = {
-            "alien": False,
-            "engineer": False
-        }
-
-    def release(self):
-        """
-        Stop any ocurring processes
-        """
-        log.warning("Class object deleted")
-        self.client.loop_stop()
-        self.client.disconnect()
+        log.info("communications object created")
 
     def __on_connect(self, client, userdata, flags, rc):
         """
@@ -57,9 +50,14 @@ class communications:
         """
         if rc == 0:
             log.info("Connection succesful")
-            # Subscribe to all channels
-            for t in self.topics:
-                self.client.subscribe(self.topics[t][5])
+            # Subscribe to reciever channels for each device
+            for item in self.channels:
+                self.client.subscribe(
+                    self.channels[item][settings.DATA_CHANNELS["recieve"]])
+
+            # Finished connecting
+            connected.set()
+
         else:
             log.error("Something went wrong - exit code: " + str(rc))
 
@@ -71,54 +69,78 @@ class communications:
         data = int(msg.payload.rstrip(b'\x00'))
         log.info(msg.topic + " Updated to " +
                  str(data))
-        if msg.topic in self.topics["alien"]:
-            log.info("message type alien")
-            self.interpreter("alien", data)
 
-        elif msg.topic in self.topics["engineer"]:
-            log.info("message type engineer")
-            self.interpreter("engineer", data)
+        for item in self.channels:
+            if msg.topic in self.channels[item]:
+                log.info("Message type: " + item)
+                self.message_interpreter(item, data)
+                return
+        # If message topic not found an error must have occurred
+        log.critical(
+            "Channel error! message recieved does not match devices channels stored | channel type: " + msg.topic)
 
-        elif msg.topic in self.topics["compound"]:
-            log.info("message type compound")
-            self.interpreter("compound", data)
-
-        else:
-            log.error("channel error")
-
-    def start_listening(self):
+    def start(self):
         """
         Enable the communication path with the mqtt server
         """
+        self.client.connect(
+            "ec2-3-10-235-26.eu-west-2.compute.amazonaws.com", 31415, 60)
         self.client.loop_start()
-        log.info("Starting listening function")
+        log.info("Communications have started")
 
-    # Function to disable listening and publishing data from the server
-    def stop_listening(self):
+    def restart(self):
         """
-        Disable the communication path with the mqtt server
+        Restart the communication path with the mqtt server
         """
         self.client.loop_stop()
+        connected.clear()
+        log.warning("Restarting communications ...")
+        self.client.reconnect()
+        self.client.loop_start()
+        log.info("Communications have restarted")
 
-    # Function to publish data to the desired channel
-    def execute(self, channel, payload):
+    def execute(self, device, instruction, payload):
         """
         Publish commands to the mqtt server
         """
-        self.client.publish(channel, payload)
-        self.sent = True
-        log.info("Data_published = " + payload + " On channel: " + channel)
+        ch = self.channels[device][settings.DATA_CHANNELS[instruction]]
+        self.client.publish(ch, payload)
+        log.info("Data published = " + payload + " On channel: " + ch)
 
-    def interpreter(self, device, data):
-        if data == self.message_interpretation["stopped"]:
-            log.info(device + " has stopped")
-            self.moving[device] = False
-        elif data == self.message_interpretation["moving"]:
-            log.info(device + " is moving")
-            self.moving[device] = True
+    def device_move_status(self, device):
+        status = json.loads(db.get(device))
+        status["moving"] = True
+        db.set(device, json.dumps(status))
+
+    def device_stop_status(self, device):
+        status = json.loads(db.get(device))
+        status["moving"] = False
+        db.set(device, json.dumps(status))
+
+    def device_action_status(self, device):
+        pass
+
+    def message_interpreter(self, device, data):
+        """
+        Message recievd interpretation to update the status of devices
+        """
+        if device == "compound":
+            status = json.loads(db.get(device))
+            for key in settings.COMPOUND_MESSAGES:
+                if data == settings.DEVICE_MESSAGES[key]:
+                    # Flip status of door if message recieved
+                    status[key] = not status[key]
+                    db.set(device, json.dumps(status))
+                    return
+            log.error("Key not found for:" + device)
+
         else:
-            log.error("Unknown message from: " +
-                      device + " data = " + str(data))
+            for key in settings.DEVICE_MESSAGES:
+                if data == settings.DEVICE_MESSAGES[key]:
+                    func = self.device_functions.get(key)
+                    func(device)
+                    log.info(device + " status is:" + key)
+                    return
 
 
 class commands:
@@ -126,28 +148,10 @@ class commands:
         """
         Class constructor
         """
-        self.alien_channels = [settings.TEAM_NAME +
-                               "-alien/" + str(n) for n in range(1, 9)]
-        self.enginner_channels = [settings.TEAM_NAME +
-                                  "-engineer/" + str(n) for n in range(1, 9)]
-        self.compound_channels = [settings.TEAM_NAME +
-                                  "-compound/" + str(n) for n in range(1, 9)]
-        self.topics = {
-            "alien": self.alien_channels,
-            "engineer": self.enginner_channels,
-            "compound": self.compound_channels
-        }
-        self.command_channels = {
-            "MV": 1,
-            "STP": 3,
-            "FNC": 5
+        self.first_run = True
+        self.connection_attempts = 1
 
-        }
-
-        # start up communications object
-        self.comms = communications(self.topics, self.command_channels)
-
-    def __merge_data(self, high_word, low_word):
+    def merge_data(high_word, low_word):
         """
         Function to combine 2 numbers in a 32 bit integer
         """
@@ -161,32 +165,77 @@ class commands:
         """ 
         Start the communication with the server
         """
-        self.comms.start_listening()
-        time.sleep(2)
 
-    def stop_comms(self):
-        time.sleep(2)
-        self.comms.stop_listening()
+        alien = {
+            "moving": False,
+            "action": False
+        }
+        engineer = {
+            "moving": False,
+            "action": False
+        }
+        compound = {}
+        for key in settings.COMPOUND_MESSAGES:
+            # Start with all the doors closed
+            compound[key] = False
 
-    def send_command(self, device, instruction, payload):
-        channel = self.topics[device][self.command_channels[instruction]]
-        self.comms.execute(channel, payload)
+        db.set("alien", json.dumps(alien))
+        db.set("engineer", json.dumps(engineer))
+        db.set("compound", json.dumps(compound))
+
+        if self.first_run:
+            self.comms = communications()
+            self.comms.start()
+            self.first_run = False
+        else:
+            self.comms.restart()
+
+        # wait until connected with a timeout
+        if connected.wait(timeout=5):
+            log.info("Connection succesful")
+            self.connection_attempts = 1
+        else:
+            log.error("Could not connect to sever. Attempt #" +
+                      str(self.connection_attempts))
+            self.connection_attempts += 1
+            if self.connection_attempts >= settings.CONNECTION_ATTEMPTS_LIMIT:
+                class AttemptLimit(Exception):
+                    pass
+                raise AttemptLimit(
+                    "Unsuccesful server connection: Number of connection attempts reached")
+            else:
+                self.start_comms()
 
     def move(self, device, distance, angle):
-        if not self.comms.moving[device]:
-            payload = self.__merge_data(distance, angle)
-            self.send_command(device, "MV", payload)
+        """
+        Sends a move command to the selected device
+        ```device``` is a string representing the the robot to communicate with
+        ```distance``` is a positive integer with the distance (mm) to move
+        ```angle``` is a signed float in radians with the relative angle to turn
+        """
+        status = json.loads(db.get(device))
+        if not status["moving"]:
+            payload = self.merge_data(distance, angle)
+            self.comms.execute(device, "move", payload)
         else:
             log.warning("Device already moving")
-            pass
 
     def stop(self, device):
-        if self.comms.moving[device]:
+        """
+        Sends a stop command to the selected device
+        ```device``` is a string representing the the robot to communicate with
+        """
+        status = json.loads(db.get(device))
+        if status["moving"]:
             payload = "0"
-            self.send_command(device, "STP", payload)
+            self.comms.execute(device, "stop", payload)
         else:
             log.warning("Device not supposed to be moving")
-            pass
 
-    def function(self, device):
-        value = 1
+    def action(self, device, select):
+        """
+        Sends a command to trigger an action
+        ```device``` is a string representing the the robot to communicate with
+        ```select``` is a string representing the action to perform by the robot
+        """
+        pass

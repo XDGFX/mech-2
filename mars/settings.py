@@ -26,15 +26,35 @@ MARKER_SMOOTHING = 0.3
 
 # General variables for communications
 TEAM_NAME = "ALIEN_SELF_ISOLATION"
+TOPICS = ["alien", "engineer", "compound"]
+CONNECTION_ATTEMPTS_LIMIT = 5
 
 # Map of channels and functions
 DATA_CHANNELS = {
-    0: "settings",
-    1: "move",
-    2: "adjust",
-    3: "stop",
-    4: "function",
-    5: "recieve",
-    6: "none",
-    7: "none",
+    "settings": 0,
+    "move":     1,
+    "adjust":   2,
+    "stop":     3,
+    "function": 4,
+    "recieve":  5,
+    "none1":    6,
+    "none2":    7,
+}
+
+# Messages from the alien/engineer
+DEVICE_MESSAGES = {
+    "stopped": 0b000000001,   # Device is not moving
+    "moving":  0b000000010,   # Device is moving
+    "action":  0b000010000    # Customizable action
+
+}
+
+# messages recieved from the compound
+COMPOUND_MESSAGES = {
+    "A": 0b00100000,   # Door A is closed/open
+    "B": 0b00100000,   # Door B is closed/open
+    "C": 0b00100000,   # Door C is closed/open
+    "D": 0b00100000,   # Door D is closed/open
+    "E": 0b00100000,   # Door E is closed/open
+    "F": 0b00100000,   # Door F is closed/open
 }
