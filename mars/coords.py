@@ -279,6 +279,8 @@ class route:
             True        # Door 4 / D
         ]))
 
+        # commands.door(index, state)
+
         update_ui()
 
     def doors(self, index, state):
@@ -290,9 +292,11 @@ class route:
         doors_state[index] = state
         r.set("doors_state", json.dumps(doors_state))
 
-        update_ui()
+        log.info(f"Command: {state} send to door index: {index}")
 
         # commands.door(index, state)
+
+        update_ui()
 
     def pathfinder(self, start, finish, shortcuts=False, avoid=None):
         """
