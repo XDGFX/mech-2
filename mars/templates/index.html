@@ -271,10 +271,11 @@
                 <div class="container">
                     <div class="columns">
                         <div class="column">
-                            <h2 class="heading has-text-centered">Camera Controls</h2>
+                            <h2 class="heading has-text-centered">Satellite Controls</h2>
                             <div class="buttons is-centered">
-                                <button class="button" onclick="socket.emit('connect_camera')">Connect Camera</button>
-                                <button class="button" onclick="reload_video_feed()">Reload Stream</button>
+                                <button class="button" onclick="socket.emit('connect_camera')">Camera</button>
+                                <button class="button" onclick="reload_video_feed()">Stream</button>
+                                <button class="button" onclick="socket.emit('start_comms')">Comms</button>
                                 <!-- <button class="button" onclick="socket.emit('start_ui_logic')">Connect UI Logic</button> -->
                             </div>
                         </div>

@@ -15,7 +15,7 @@ import redis
 from flask import Flask, Response, render_template
 from flask_socketio import SocketIO
 
-from mars import cam, coords, logic, logs, settings
+from mars import cam, comms, coords, logic, logs, settings
 
 # --- INITIALISATION ---
 log = logs.create_log(__name__)
@@ -120,3 +120,8 @@ def toggle_doors(data):
     state = data["state"]
 
     coords.route().doors(index, state)
+
+
+@sio.on('start_comms')
+def start_comms():
+    comms.commands().start_comms()
