@@ -17,7 +17,6 @@ log = logs.create_log(__name__)
 
 connected = threading.Event()
 
-
 db = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
 
@@ -42,14 +41,12 @@ class communications:
         self.client.on_connect = self.__on_connect
         self.client.on_message = self.__on_message
         self.client.username_pw_set("student", password="smartPass")
-        log.info("communications object created")
 
     def __on_connect(self, client, userdata, flags, rc):
         """
         Callback function upon connection to the mqtt server
         """
         if rc == 0:
-            log.info("Connection succesful")
             # Subscribe to reciever channels for each device
             for item in self.channels:
                 self.client.subscribe(
@@ -85,18 +82,18 @@ class communications:
         """
         self.client.connect(
             "ec2-3-10-235-26.eu-west-2.compute.amazonaws.com", 31415, 60)
-        self.client.loop_start()
         log.info("Communications have started")
+        while int(db.get("comms_enabled")):
+            self.client.loop(timeout=0.1)
 
     def restart(self):
         """
         Restart the communication path with the mqtt server
         """
         self.client.loop_stop()
-        connected.clear()
-        log.warning("Restarting communications ...")
         self.client.reconnect()
         self.client.loop_start()
+        log.warning("Restarting communications ...")
         log.info("Communications have restarted")
 
     def execute(self, device, instruction, payload):
@@ -148,10 +145,8 @@ class commands:
         """
         Class constructor
         """
-        self.first_run = True
-        self.connection_attempts = 1
 
-    def merge_data(high_word, low_word):
+    def merge_data(self, high_word, low_word):
         """
         Function to combine 2 numbers in a 32 bit integer
         """
@@ -165,6 +160,11 @@ class commands:
         """ 
         Start the communication with the server
         """
+
+        # connected.clear()
+        db.set("comms_enabled", 0)
+        time.sleep(1)
+        db.set("comms_enabled", 1)
 
         alien = {
             "moving": False,
@@ -183,28 +183,8 @@ class commands:
         db.set("engineer", json.dumps(engineer))
         db.set("compound", json.dumps(compound))
 
-        if self.first_run:
-            self.comms = communications()
-            self.comms.start()
-            self.first_run = False
-        else:
-            self.comms.restart()
-
-        # wait until connected with a timeout
-        if connected.wait(timeout=5):
-            log.info("Connection succesful")
-            self.connection_attempts = 1
-        else:
-            log.error("Could not connect to sever. Attempt #" +
-                      str(self.connection_attempts))
-            self.connection_attempts += 1
-            if self.connection_attempts >= settings.CONNECTION_ATTEMPTS_LIMIT:
-                class AttemptLimit(Exception):
-                    pass
-                raise AttemptLimit(
-                    "Unsuccesful server connection: Number of connection attempts reached")
-            else:
-                self.start_comms()
+        self.comms = communications()
+        self.comms.start()
 
     def move(self, device, distance, angle):
         """

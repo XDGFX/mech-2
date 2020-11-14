@@ -28,7 +28,6 @@ elif os.environ.get("ENVIRONMENT") == "DEV_COMMS":
     from mars.comms import commands
     c = commands()
     c.start_comms()
-    sleep(2)
     c.move("alien", 200, -54)
     sleep(20)
-    c.stop_comms()
+    c.start_comms()
