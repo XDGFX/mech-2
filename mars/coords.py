@@ -337,10 +337,11 @@ class route:
                         x for x in allowed_routes[code] if x not in self.markers_doors[index]]
 
         # Loop over all possible next positions from the starting position
-        for next_position in allowed_routes[start]:
-            routes.append(
-                [start, next_position]
-            )
+        for next_point in allowed_routes[start]:
+            if next_point != avoid:
+                routes.append(
+                    [start, next_point]
+                )
 
         # Keep looking while new routes are being generated
         while routes and not solution_found:

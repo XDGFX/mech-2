@@ -36,7 +36,7 @@ def serve():
 def start_server():
     thread = threading.Thread(target=serve)
     thread.start()
-    log.info("Webserver started")
+    log.info("Webserver started on http://localhost:5000")
 
 
 # --- SEND COMMANDS ---

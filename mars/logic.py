@@ -105,6 +105,8 @@ class engineer:
 
         reached_target = False
 
+        within_alien_radius = False
+
         while not reached_target:
 
             reached_marker = False
@@ -144,11 +146,20 @@ class engineer:
                     alien_distance, _ = coords.coords().calculate_vector(
                         "engineer", "alien")
 
+                    # Keep looping until engineer is out of radius of Alien
+                    if within_alien_radius:
+                        if alien_distance > settings.DETECTION_RADIUS * 1.1:
+                            log.info(
+                                "Engineer no longer within radius of Alien")
+                            within_alien_radius = False
+
                     # If within hearing distance, re-calculate route with alien avoidance
-                    if alien_distance < settings.DETECTION_RADIUS:
-                        log.debug("Engineer within hearing distance of alien!")
+                    elif alien_distance < settings.DETECTION_RADIUS:
+                        log.info("Engineer within hearing distance of alien!")
+                        log.info(
+                            f"Avoiding Alien at marker: {int(r.get('alien_current_marker'))}")
                         new_target_route = coords.route().pathfinder(
-                            int(r.get("engineer_current_marker")), target_marker, avoid=alien.current_marker)
+                            int(r.get("engineer_current_marker")), target_marker, avoid=int(r.get("alien_current_marker")))
 
                         # Check if no route has been found, if so throw a fit
                         if not new_target_route:
@@ -158,20 +169,27 @@ class engineer:
 
                         # Check if new route is in the same direction, or a new direction
                         if target_route[1] == new_target_route[1]:
-                            # Continue in same direction; remove the first element to prevent backgracking
+                            # Continue in same direction; remove the first element to prevent backtracking
                             new_target_route.pop(0)
 
                         target_route = new_target_route
 
-                    else:
-                        # Only send if the next message is required
-                        comms_time_remain = comms_start_time + 1 / settings.COMMSRATE - time.time()
+                        log.info(
+                            f"Engineer working on next task: {target_route}")
 
-                        if comms_time_remain < 0:
-                            # Send a command to go to the first marker in the route
-                            # commands.move("engineer", magnitude, direction)
+                        within_alien_radius = True
 
-                            comms_start_time = time.time()
+                        # Tell engineer to stop moving
+                        # commands.stop("engineer")
+
+                    # Only send if the next message is required
+                    comms_time_remain = comms_start_time + 1 / settings.COMMSRATE - time.time()
+
+                    if comms_time_remain < 0:
+                        # Send a command to go to the first marker in the route
+                        # commands.move("engineer", magnitude, direction)
+
+                        comms_start_time = time.time()
 
                 # Wait until the next frame is required
                 data_time_remain = data_start_time + 1 / settings.DATARATE - time.time()
@@ -217,6 +235,9 @@ class alien:
 
             target_route = coords.route().pathfinder(
                 int(r.get("alien_current_marker")), target_marker, shortcuts=True)
+
+            # Remove current marker from route
+            target_route.pop(0)
 
             log.info(f"Alien following route: {target_route}")
 
