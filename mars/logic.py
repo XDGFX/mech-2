@@ -26,7 +26,12 @@ def update_ui():
     """
     from mars.webapp import ws_send
 
-    doors_state = json.loads(r.get("doors_state"))
+    try:
+        doors_state = json.loads(r.get("doors_state"))
+    except TypeError:
+        # Doors have not been initialised
+        coords.route().initialise_doors()
+        doors_state = json.loads(r.get("doors_state"))
 
     # Send current data to the UI
     ws_send("update_logic", json.dumps(
@@ -104,13 +109,14 @@ class engineer:
 
             reached_marker = False
 
+            # Save start time to synchronise data rates
+            comms_start_time = time.time()
+            data_start_time = time.time()
+
             while not reached_marker:
                 # Break from loops if required
                 if not int(r.get("engineer_tasks_enabled")):
                     return
-
-                # Save start time to synchronise framerate
-                start_time = time.time()
 
                 try:
                     # Calculate distance to next marker in route
@@ -158,18 +164,22 @@ class engineer:
                         target_route = new_target_route
 
                     else:
-                        # Send a command to go to the first marker in the route
-                        # commands.move("engineer", magnitude, direction)
-                        pass
+                        # Only send if the next message is required
+                        comms_time_remain = comms_start_time + 1 / settings.COMMSRATE - time.time()
+
+                        if comms_time_remain < 0:
+                            # Send a command to go to the first marker in the route
+                            # commands.move("engineer", magnitude, direction)
+
+                            comms_start_time = time.time()
 
                 # Wait until the next frame is required
-                end_time = time.time()
-                time_remain = start_time + 1 / settings.FRAMERATE - end_time
+                data_time_remain = data_start_time + 1 / settings.DATARATE - time.time()
 
-                if time_remain > 0:
-                    time.sleep(time_remain)
+                if data_time_remain < 0:
+                    update_ui()
 
-                update_ui()
+                    data_start_time = time.time()
 
             if not target_route:
                 # Route is complete
@@ -212,13 +222,14 @@ class alien:
 
             reached_marker = False
 
+            # Save start time to synchronise data rates
+            comms_start_time = time.time()
+            data_start_time = time.time()
+
             while not reached_marker:
                 # Break from loops if required
                 if not int(r.get("alien_enabled")):
                     return
-
-                # Save start time to synchronise framerate
-                start_time = time.time()
 
                 try:
                     # Calculate distance to next marker in route
@@ -242,15 +253,19 @@ class alien:
                     reached_marker = True
 
                 else:
-                    # Send a command to go to the first marker in the route
-                    # commands.move("engineer", magnitude, direction)
-                    pass
+                    # Only send if the next message is required
+                    comms_time_remain = comms_start_time + 1 / settings.COMMSRATE - time.time()
+
+                    if comms_time_remain < 0:
+                        # Send a command to go to the first marker in the route
+                        # commands.move("alien", magnitude, direction)
+
+                        comms_start_time = time.time()
 
                 # Wait until the next frame is required
-                end_time = time.time()
-                time_remain = start_time + 1 / settings.FRAMERATE - end_time
+                data_time_remain = data_start_time + 1 / settings.DATARATE - time.time()
 
-                if time_remain > 0:
-                    time.sleep(time_remain)
+                if data_time_remain < 0:
+                    update_ui()
 
-                update_ui()
+                    data_start_time = time.time()
