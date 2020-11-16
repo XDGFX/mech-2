@@ -45,7 +45,7 @@ DATA_CHANNELS = {
 DEVICE_MESSAGES = {
     "stopped": 0b000000001,   # Device is not moving
     "moving":  0b000000010,   # Device is moving
-    "action":  0b000010000    # Customizable action
+    "action":  0b000000011    # Customizable action
 
 }
 
@@ -54,7 +54,5 @@ COMPOUND_MESSAGES = {
     "A": 0b00100000,   # Door A is closed/open
     "B": 0b00100000,   # Door B is closed/open
     "C": 0b00100000,   # Door C is closed/open
-    "D": 0b00100000,   # Door D is closed/open
-    "E": 0b00100000,   # Door E is closed/open
-    "F": 0b00100000,   # Door F is closed/open
+    "D": 0b00100000   # Door D is closed/open
 }
