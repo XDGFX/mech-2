@@ -6,7 +6,6 @@ Mechatronics 2
 Alberto Guerra Martinuzzi, 2020
 """
 from mars import logs, settings
-from mars import commands as cmd
 import paho.mqtt.client as mqtt  # This is the library to do the MQTT communications
 import time  # This is the library that will allow us to use the sleep function
 import threading
@@ -115,7 +114,7 @@ class communications:
         db.set(device, json.dumps(status))
 
     def device_action_status(self, device):
-        pass
+        log.info("action ocurred")
 
     def message_interpreter(self, device, data):
         """
@@ -129,14 +128,14 @@ class communications:
                     status[key] = not status[key]
                     db.set(device, json.dumps(status))
                     return
-            log.error("Key not found for:" + device)
+            log.error("Key not found for: " + device)
 
         else:
             for key in settings.DEVICE_MESSAGES:
                 if data == settings.DEVICE_MESSAGES[key]:
                     func = self.device_functions.get(key)
                     func(device)
-                    log.info(device + " status is:" + key)
+                    log.info(device + " status is: " + key)
                     return
 
 

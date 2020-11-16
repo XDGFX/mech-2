@@ -26,8 +26,15 @@ elif os.environ.get("ENVIRONMENT") == "DEV_COMMS":
     from time import sleep
 
     from mars.comms import commands
+    import threading
     c = commands()
-    c.start_comms()
+    t = threading.Thread(target=c.start_comms)
+    t.start()
+    sleep(2)
     c.move("alien", 200, -54)
     sleep(20)
-    c.start_comms()
+    c.move("alien", 55, -10)
+    sleep(1)
+    c.stop("alien")
+    sleep(3)
+    # c.start_comms()
