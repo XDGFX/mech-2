@@ -44,7 +44,7 @@ class camera:
 
         # Read and store calibration information
         Camera = np.load(os.path.join(
-            "mars", "cam_data", "Sample_Calibration.npz"))
+            "mars", "cam_data", "Calibration.npz"))
         self.CM = Camera['CM']
 
         # Distortion coefficients from the camera
