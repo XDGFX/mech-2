@@ -279,7 +279,7 @@ class alien:
 
                     if comms_time_remain < 0:
                         # Send a command to go to the first marker in the route
-                        # commands.move("alien", magnitude, direction)
+                        commands.simple_alien_move(magnitude, direction)
 
                         comms_start_time = time.time()
 
