@@ -6,6 +6,7 @@ Mechatronics 2
 Alberto Guerra Martinuzzi, 2020
 """
 import json
+from logging import warning
 import math
 import threading
 import time  # This is the library that will allow us to use the sleep function
@@ -127,11 +128,25 @@ class communications:
         # Log that communications have started
         log.info("Communications have started")
 
+        prev_count = {}
+
         # Main loop for checking incoming messages in the MQTT server
         # This is a blocking loop, it needs to be placed on a separate thread
         # The loop will break when the database "comms_enabled" variable is set to 0
         while int(db.get("comms_enabled")):
-            self.client.loop(timeout=0.1)
+
+            # Check the counter before checking messages from the server
+            for device in settings.TOPICS:
+                prev_count[device] = db.get(device + "-counter")
+
+            # Read messages from the server
+            self.client.loop(timeout=settings.DATARATE)
+
+            # Check for the connection counters again
+            for device in settings.TOPICS:
+                new_count = int(db.get(device + "-counter"))
+                if (int(prev_count[device]) + 1) > new_count:
+                    log.warning(f"{device} not connected!")
 
     def execute(self, device, instruction, payload):
         """
@@ -183,7 +198,12 @@ class communications:
         log.info("action ocurred")
 
     def device_connection_status(self, device):
-        pass
+
+        # select counter to be incremented
+        key = device + "-counter"
+
+        # Increment device counter
+        db.incr(key)
 
     def message_interpreter(self, device, data):
         """
@@ -261,10 +281,16 @@ class commands:
             "moving": False,
             "action": False
         }
+
         compound = {}
         for key in settings.COMPOUND_MESSAGES:
             # Start with all the doors open
             compound[key] = True
+
+        # Create a counter for each device to check their connection status
+        db.incr("engineer-counter")
+        db.incr("alien-counter")
+        db.incr("compound-counter")
 
         # Store the stauses in the database
         db.set("alien", json.dumps(alien))

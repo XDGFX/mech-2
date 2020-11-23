@@ -29,6 +29,12 @@ TEAM_NAME = "ALIEN_SELF_ISOLATION"
 TOPICS = ["alien", "engineer", "compound"]
 CONNECTION_ATTEMPTS_LIMIT = 5
 
+# MQTT Server information
+SERVER_IP = "ec2-3-10-235-26.eu-west-2.compute.amazonaws.com"
+PORT = 31415
+USERNAME = "student"
+PASSWORD = "smartPass"
+
 # Map of channels and functions
 DATA_CHANNELS = {
     "settings": 0,
@@ -52,8 +58,8 @@ DEVICE_MESSAGES = {
 
 # messages recieved from the compound
 COMPOUND_MESSAGES = {
-    "A": 0b00100000,   # Door A is closed/open
-    "B": 0b00100000,   # Door B is closed/open
-    "C": 0b00100000,   # Door C is closed/open
-    "D": 0b00100000   # Door D is closed/open
+    "A": 0b00000001,   # Door A is closed/open
+    "B": 0b00000010,   # Door B is closed/open
+    "C": 0b00000011,   # Door C is closed/open
+    "D": 0b00000100   # Door D is closed/open
 }
