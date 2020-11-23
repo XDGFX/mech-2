@@ -23,6 +23,8 @@ log = logs.create_log(__name__)
 r = redis.Redis(host='localhost', port=6379,
                 db=0, decode_responses=True)
 
+cmd = commands()
+
 
 class coords:
     def __init__(self):
@@ -279,7 +281,10 @@ class route:
             True        # Door 4 / D
         ]))
 
-        # commands.door(index, state)
+        cmd.door("A", "open")
+        cmd.door("B", "open")
+        cmd.door("C", "open")
+        cmd.door("D", "open")
 
         update_ui()
 
@@ -294,7 +299,7 @@ class route:
 
         log.info(f"Command: {state} send to door index: {index}")
 
-        # commands.door(index, state)
+        cmd.door(index, state)
 
         update_ui()
 
