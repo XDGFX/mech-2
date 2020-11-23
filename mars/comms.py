@@ -50,6 +50,8 @@ class communications:
             for item in self.channels:
                 self.client.subscribe(
                     self.channels[item][settings.DATA_CHANNELS["recieve"]])
+                # self.client.subscribe(
+                #    self.channels[item][settings.DATA_CHANNELS["connected"]])
 
             # Finished connecting
             connected.set()

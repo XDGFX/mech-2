@@ -38,11 +38,12 @@ DATA_CHANNELS = {
     "function": 4,
     "recieve":  5,
     "none1":    6,
-    "none2":    7,
+    "connected": 7
 }
 
 # Messages from the alien/engineer
 DEVICE_MESSAGES = {
+    "connected": 0b000000101,   # status of device
     "stopped": 0b000000001,   # Device is not moving
     "moving":  0b000000010,   # Device is moving
     "action":  0b000000011    # Customizable action
