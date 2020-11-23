@@ -43,7 +43,7 @@ MainTopic = "ALIEN_SELF_ISOLATION-alien/7"
 client.loop_start()
 
 # Pick a value
-val = 1
+val = 4
 
 # Send (Publish) the value continuously
 while(1):
@@ -51,7 +51,7 @@ while(1):
     # Start a try in case we have an error
     try:
         # Every one second
-        time.sleep(1)
+        val = input()
 
         # Publish the value (integer) as a string. All messages are strings
         client.publish(MainTopic, str(val))

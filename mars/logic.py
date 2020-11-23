@@ -19,6 +19,8 @@ log = logs.create_log(__name__)
 
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
+cmd = commands()
+
 
 def update_ui():
     """
@@ -237,7 +239,12 @@ class alien:
                 int(r.get("alien_current_marker")), target_marker, shortcuts=True)
 
             # Remove current marker from route
-            target_route.pop(0)
+            try:
+                target_route.pop(0)
+            except AttributeError:
+                log.info("Alien has reached it's current destination!")
+                time.sleep(settings.COMMSRATE)
+                continue
 
             log.info(f"Alien following route: {target_route}")
 
@@ -279,7 +286,7 @@ class alien:
 
                     if comms_time_remain < 0:
                         # Send a command to go to the first marker in the route
-                        commands.simple_alien_move(magnitude, direction)
+                        cmd.simple_alien_move(magnitude, direction)
 
                         comms_start_time = time.time()
 

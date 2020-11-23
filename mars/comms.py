@@ -5,12 +5,15 @@ Mechatronics 2
 
 Alberto Guerra Martinuzzi, 2020
 """
-from mars import logs, settings
-import paho.mqtt.client as mqtt  # This is the library to do the MQTT communications
-import time  # This is the library that will allow us to use the sleep function
-import threading
-import redis
 import json
+import math
+import threading
+import time  # This is the library that will allow us to use the sleep function
+
+import paho.mqtt.client as mqtt  # This is the library to do the MQTT communications
+import redis
+
+from mars import logs, settings
 
 log = logs.create_log(__name__)
 
@@ -144,6 +147,9 @@ class commands:
         """
         Class constructor
         """
+        self.comms = communications()
+        thread = threading.Thread(target=self.comms.start)
+        thread.start()
 
     def merge_data(self, high_word, low_word):
         """
@@ -156,7 +162,7 @@ class commands:
         return msg
 
     def start_comms(self):
-        """ 
+        """
         Start the communication with the server
         """
 
@@ -219,7 +225,7 @@ class commands:
         """
         pass
 
-    def simple_alien_move(magnitude, direction):
+    def simple_alien_move(self, magnitude, direction):
         """
         Simple communication for direct Python to C code for the Arduino.
 
@@ -231,37 +237,44 @@ class commands:
         3: Forward
         """
 
-        # Create the mqtt client object
-        client = mqtt.Client()
+        # # Create the mqtt client object
+        # client = mqtt.Client()
+        client = self.comms.client
 
-        # Set the username and password
-        client.username_pw_set("student", password="smartPass")
+        # # Set the username and password
+        # client.username_pw_set("student", password="smartPass")
 
-        # Connect to the server using a specific port with a timeout delay (in seconds)
-        client.connect(
-            "ec2-3-10-235-26.eu-west-2.compute.amazonaws.com", 31415, 60)
+        # # Connect to the server using a specific port with a timeout delay (in seconds)
+        # client.connect(
+        #     "ec2-3-10-235-26.eu-west-2.compute.amazonaws.com", 31415, 60)
 
         # Create your main topic string. Everything else should be fields with values 1-8
         MainTopic = "ALIEN_SELF_ISOLATION-alien/7"
 
-        # Start the client to enable the above events to happen
-        client.loop_start()
+        # # Start the client to enable the above events to happen
+        # client.loop_start()
 
-        threshold_angle = 0.1
-        threshold_magitude = 10
-
-        # Turn left
-        if direction < (0 - threshold_angle):
-            client.publish(MainTopic, str(1))
+        # Calculate angle threshold based on exponential function
+        # threshold_angle = 0.4
+        threshold_angle = 0.6 * math.exp(-0.1 * (magnitude + 2)) + 0.1
+        threshold_magitude = 0.1
 
         # Turn right
-        elif direction > (0 + threshold_angle):
+        if direction < (0 - threshold_angle):
+            log.info("Turn left")
             client.publish(MainTopic, str(2))
+
+        # Turn left
+        elif direction > (0 + threshold_angle):
+            log.info("Turn right")
+            client.publish(MainTopic, str(1))
 
         # Forward
         elif magnitude > threshold_magitude:
+            log.info("Forwards")
             client.publish(MainTopic, str(3))
 
         # Stop
         else:
+            log.info("Stop")
             client.publish(MainTopic, str(0))

@@ -10,7 +10,7 @@ Mechatronics 2
 FRAMERATE = 10
 
 # General data transmission rate for UI
-DATARATE = 1
+DATARATE = 0.5
 
 # Rate to send updated communications
 COMMSRATE = 1
