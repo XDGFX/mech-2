@@ -11,7 +11,7 @@ uint16_t port = 31415;
 char clientid[] = "alien_self_isolation_test_arduino";
 char username[] = "student";
 char password[] = "smartPass";
-char topicname[] = "ALIEN_SELF_ISOLATION-alien/7";
+char topicname[] = "ALIEN_SELF_ISOLATION-compound/7";
 
 // Create servo items
 Servo door_A;
@@ -22,8 +22,8 @@ Servo door_D;
 // Define servo pins
 #define door_pin_A 5
 #define door_pin_B 6
-#define door_pin_C 9
-#define door_pin_D 10
+#define door_pin_C 10
+#define door_pin_D 11
 
 // Callback function header
 void callback(char *topic, byte *payload, unsigned int length);

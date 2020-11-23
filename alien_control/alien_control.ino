@@ -18,7 +18,7 @@ char topicname[] = "ALIEN_SELF_ISOLATION-alien/7";
 #define PWM_R2 3
 
 // Variable for PWM motor speed output, and time active
-int motorPwm = 100;
+int motorPwm = 30;
 int timeActive = 50;
 int timeForwards = 200;
 

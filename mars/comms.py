@@ -278,3 +278,39 @@ class commands:
         else:
             log.info("Stop")
             client.publish(MainTopic, str(0))
+
+    def door(self, door, state):
+        client = self.comms.client
+
+        # Create your main topic string. Everything else should be fields with values 1-8
+        MainTopic = "ALIEN_SELF_ISOLATION-compound/7"
+
+        # // 0: Door A Open
+        # // 1: Door A Close
+        # // 2: Door B Open
+        # // 3: Door B Close
+        # // 4: Door C Open
+        # // 5: Door C Close
+        # // 6: Door D Open
+        # // 7: Door D Close
+
+        if door == 0:
+            cmd = 0
+
+        elif door == 1:
+            cmd = 2
+
+        elif door == 2:
+            cmd = 4
+
+        elif door == 3:
+            cmd = 6
+
+        else:
+            log.error(f"Invalid door: {door}")
+            return
+
+        if state == False:
+            cmd += 1
+
+        client.publish(MainTopic, str(cmd))

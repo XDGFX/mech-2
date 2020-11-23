@@ -10,10 +10,10 @@ Mechatronics 2
 FRAMERATE = 10
 
 # General data transmission rate for UI
-DATARATE = 0.5
+DATARATE = 1
 
 # Rate to send updated communications
-COMMSRATE = 1
+COMMSRATE = 5
 
 # Radius within which the Engineer can hear / see the Alien
 DETECTION_RADIUS = 30
