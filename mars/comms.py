@@ -104,6 +104,8 @@ class communications:
 
         It recieves the connection staus of the devices
         """
+        from mars.webapp import ws_send
+
         # Create the MQTT client object class
         self.client = mqtt.Client()
 
@@ -125,6 +127,8 @@ class communications:
         for device in settings.TOPICS:
             prev_count[device] = int(db.get(device + "-counter"))
 
+            ws_send(f"status_{device}", "not connected")
+
         start_time = time.time()
         elapsed_time = 0
 
@@ -137,7 +141,7 @@ class communications:
             elapsed_time = time.time() - start_time
 
             # Every 5 seconds check the status of the counters, if a number has changed, the device must be connected
-            if elapsed_time > 10:
+            if elapsed_time > 5:
 
                 # Reset the elapsed time counter
                 start_time = time.time()
@@ -148,7 +152,10 @@ class communications:
 
                     # If the previous count + 1 is bigger than the new count, the counters have not changed
                     if (int(prev_count[device])+1) > new_count:
-                        log.warning(f"{device} not connected!")
+                        #log.warning(f"{device} not connected!")
+                        ws_send(f"status_{device}", "not connected")
+                    else:
+                        ws_send(f"status_{device}", "connected")
 
                     # Reset the counters
                     prev_count[device] = db.get(device + "-counter")
@@ -170,7 +177,7 @@ class communications:
         self.client.connect(settings.SERVER_IP, settings.PORT, 60)
 
         # Non blocking loop function
-        self.client.loop_start
+        self.client.loop_start()
 
     def start_sending_doors(self):
         # Create the MQTT client object class
@@ -186,11 +193,12 @@ class communications:
         # Log that communications have started
         log.info("Sending communications have started - Doors")
 
-        prev_doors_state = json.load(db.get("doors_state"))
+        prev_doors_state = json.loads(db.get("doors_state"))
 
         # set all the doors to initial state
-        for door in prev_doors_state:
-            self.change_door_state(door, prev_doors_state[door])
+        for index, _ in enumerate(prev_doors_state):
+            self.change_door_state(index, prev_doors_state[index])
+            time.sleep(0.5)
 
         # Main loop for checking incoming messages in the MQTT server
         # This is a blocking loop, it needs to be placed on a separate thread
@@ -202,11 +210,15 @@ class communications:
             time.sleep(0.2)
 
             # Check the database for the door status, if changed, publish the data
-            doors_state = json.load(db.get("doors_state"))
-            for door in doors_state:
-                if doors_state[door] is not prev_doors_state[door]:
-                    # send message to arduino to change state if door status has changed
-                    self.change_door_state(door, doors_state[door])
+            doors_state = json.loads(db.get("doors_state"))
+
+            if doors_state != prev_doors_state:
+                for index, _ in enumerate(doors_state):
+                    if doors_state[index] != prev_doors_state[index]:
+                        # send message to arduino to change state if door status has changed
+                        self.change_door_state(index, doors_state[index])
+
+                prev_doors_state = doors_state
 
     def change_door_state(self, door, state):
 
@@ -262,13 +274,13 @@ class communications:
         Function to change the "moving" database status of a given device to true
         """
         # Load status from the database
-        status = json.loads(db.get(device))
+        status = json.loads(db.get(f"{device}_current_status"))
 
         # Change moving status to True
         status["moving"] = True
 
         # Save status to database
-        db.set(device, json.dumps(status))
+        db.set(f"{device}_current_status", json.dumps(status))
 
     def device_stop_status(self, device):
         """
@@ -276,13 +288,13 @@ class communications:
         """
 
         # Load status from the database
-        status = json.loads(db.get(device))
+        status = json.loads(db.get(f"{device}_current_status"))
 
         # Change moving status to False
         status["moving"] = False
 
         # Save status to database
-        db.set(device, json.dumps(status))
+        db.set(f"{device}_current_status", json.dumps(status))
 
     def device_action_status(self, device):
         """
@@ -363,14 +375,14 @@ class commands:
         db.incr("compound-counter")
 
         # Store the stauses in the database
-        db.set("alien", json.dumps(alien))
-        db.set("engineer", json.dumps(engineer))
+        db.set("alien_current_status", json.dumps(alien))
+        db.set("engineer_current_status", json.dumps(engineer))
 
         # Start the communications objects
         self.comms = communications()
         self.comms.start_recieveing()
 
-    def device_send(self, device):
+    def device_send(self):
         """
         Start the communication with the server
         """
@@ -380,7 +392,7 @@ class commands:
         self.comms.start_sending_device()
 
         # Log that communications have started
-        log.info(f"Sending communications have started - {device}")
+        log.info(f"Sending communications have started")
 
     def doors_send(self):
         """
@@ -398,6 +410,10 @@ class commands:
         ```distance``` is a positive integer with the distance (mm) to move
         ```angle``` is a signed float in radians with the relative angle to turn
         """
+
+        # Change magnitude and direction to integers
+        angle = int(math.degrees(angle))
+        distance = int(distance * settings.DIST_MULTIPLIER)
 
         # combine angle and distance information in one message
         payload = self.merge_data(distance, angle)
