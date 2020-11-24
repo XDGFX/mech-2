@@ -37,15 +37,15 @@ def update_ui():
     ws_send("update_logic", json.dumps(
         {
             "engineer": {
-                "current_task": int(r.get("engineer_current_task")),
-                "current_marker": int(r.get("engineer_current_marker")),
+                "current_task": int(r.get("engineer_current_task") or -1),
+                "current_marker": int(r.get("engineer_current_marker") or -1),
                 "current_status": r.get("engineer_current_status"),
-                "tasks_enabled": int(r.get("engineer_tasks_enabled")),
+                "tasks_enabled": int(r.get("engineer_tasks_enabled") or -1),
                 "target_route": r.get("engineer_target_route"),
             },
             "alien": {
-                "current_marker": int(r.get("alien_current_marker")),
-                "enabled": int(r.get("alien_enabled")),
+                "current_marker": int(r.get("alien_current_marker") or -1),
+                "enabled": int(r.get("alien_enabled") or -1),
                 "target_route": r.get("alien_target_route"),
             },
             "doors": {
