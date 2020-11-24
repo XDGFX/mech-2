@@ -6,9 +6,8 @@ Mechatronics 2
 Alberto Guerra Martinuzzi, 2020
 """
 import json
-from logging import warning
+from logging import logs
 import math
-import threading
 import time  # This is the library that will allow us to use the sleep function
 
 import paho.mqtt.client as mqtt  # This is the library to do the MQTT communications
@@ -18,9 +17,6 @@ from mars import logs, settings
 
 # Initialise the logs class for debugging and data logging
 log = logs.create_log(__name__)
-
-# Create threading event to check when connected to the MQTT server
-connected = threading.Event()
 
 # Initialise the local database for file handling
 db = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
@@ -51,17 +47,6 @@ class communications:
             "action":  self.device_action_status
         }
 
-        # Create the MQTT client object class
-        self.client = mqtt.Client()
-
-        # Assign the MQTT callback functions from the communications class
-        self.client.on_connect = self.__on_connect
-        self.client.on_message = self.__on_message
-
-        # Setup the username and password for the MQTT client
-        self.client.username_pw_set(
-            settings.USERNAME, password=settings.PASSWORD)
-
     def __on_connect(self, client, userdata, flags, rc):
         """
         Callback function upon connection to the mqtt server
@@ -80,9 +65,6 @@ class communications:
                 # Connected channel used to check if the arduino is still connected and listening
                 self.client.subscribe(
                     self.channels[item][settings.DATA_CHANNELS["connected"]])
-
-            # Finished connecting, set the connected flag to true
-            connected.set()
 
         else:
             # If recieved code is not zero, log an error with the exit code
@@ -105,7 +87,7 @@ class communications:
         # Check the message topic to identify device
         for item in self.channels:
             if msg.topic in self.channels[item]:
-                log.info("Message type: " + item)
+                #log.info("Message type: " + item)
 
                 # Send the message and the device name to the message interpreter
                 self.message_interpreter(item, data)
@@ -115,12 +97,24 @@ class communications:
         log.critical(
             "Channel error! message recieved does not match devices channels stored | channel type: " + msg.topic)
 
-    def start(self):
+    def start_recieveing(self):
         """
         Enable the communication path with the mqtt server
 
         This is a blocking function used to handle communications with the MQTT server
+
+        It recieves the connection staus of the devices
         """
+        # Create the MQTT client object class
+        self.client = mqtt.Client()
+
+        # Assign the MQTT callback functions from the communications class
+        self.client.on_connect = self.__on_connect
+        self.client.on_message = self.__on_message
+
+        # Setup the username and password for the MQTT client
+        self.client.username_pw_set(
+            settings.USERNAME, password=settings.PASSWORD)
 
         # Connect to the given server
         self.client.connect(settings.SERVER_IP, settings.PORT, 60)
@@ -129,24 +123,126 @@ class communications:
         log.info("Communications have started")
 
         prev_count = {}
+        for device in settings.TOPICS:
+            prev_count[device] = int(db.get(device + "-counter"))
+
+        start_time = time.time()
+        elapsed_time = 0
 
         # Main loop for checking incoming messages in the MQTT server
         # This is a blocking loop, it needs to be placed on a separate thread
         # The loop will break when the database "comms_enabled" variable is set to 0
         while int(db.get("comms_enabled")):
 
-            # Check the counter before checking messages from the server
-            for device in settings.TOPICS:
-                prev_count[device] = db.get(device + "-counter")
+            # Update the elapsed time
+            elapsed_time = time.time() - start_time
+
+            time.sleep(0.2)
+
+            # Every 5 seconds check the status of the counters, if a number has changed, the device must be connected
+            if elapsed_time > 5:
+
+                # Reset the elapsed time counter
+                start_time = elapsed_time
+
+                # Check the current count in every device
+                for device in settings.TOPICS:
+                    new_count = int(db.get(device + "-counter"))
+
+                    # If the previous count + 1 is bigger than the new count, the counters have not changed
+                    if (int(prev_count[device])+1) > new_count:
+                        log.warning(f"{device} not connected!")
+
+                    # Reset the counters
+                    prev_count[device] = db.get(device + "-counter")
 
             # Read messages from the server
             self.client.loop(timeout=settings.DATARATE)
 
-            # Check for the connection counters again
-            for device in settings.TOPICS:
-                new_count = int(db.get(device + "-counter"))
-                if (int(prev_count[device]) + 1) > new_count:
-                    log.warning(f"{device} not connected!")
+    def start_sending_device(self):
+        # Create the MQTT client object class
+        self.client = mqtt.Client()
+
+        # Setup the username and password for the MQTT client
+        self.client.username_pw_set(
+            settings.USERNAME, password=settings.PASSWORD)
+
+        # Connect to the given server
+        self.client.connect(settings.SERVER_IP, settings.PORT, 60)
+
+        # Non blocking loop function
+        self.client.loop_start
+
+    def start_sending_doors(self):
+        # Create the MQTT client object class
+        self.client = mqtt.Client()
+
+        # Setup the username and password for the MQTT client
+        self.client.username_pw_set(
+            settings.USERNAME, password=settings.PASSWORD)
+
+        # Connect to the given server
+        self.client.connect(settings.SERVER_IP, settings.PORT, 60)
+
+        # Log that communications have started
+        log.info("Sending communications have started - Doors")
+
+        prev_doors_state = json.load(db.get("doors_state"))
+
+        # set all the doors to initial state
+        for door in prev_doors_state:
+            self.change_door_state(door, prev_doors_state[door])
+
+        # Main loop for checking incoming messages in the MQTT server
+        # This is a blocking loop, it needs to be placed on a separate thread
+        # The loop will break when the database "comms_enabled" variable is set to 0
+        while True:
+            # Read messages from the server
+            self.client.loop(timeout=0.1)
+
+            time.sleep(0.2)
+
+            # Check the database for the door status, if changed, publish the data
+            doors_state = json.load(db.get("doors_state"))
+            for door in doors_state:
+                if doors_state[door] is not prev_doors_state[door]:
+                    # send message to arduino to change state if door status has changed
+                    self.change_door_state(door, doors_state[door])
+
+    def change_door_state(self, door, state):
+
+        # Create your main topic string. Everything else should be fields with values 1-8
+        MainTopic = "ALIEN_SELF_ISOLATION-compound/7"
+
+        # // 0: Door A Open
+        # // 1: Door A Close
+        # // 2: Door B Open
+        # // 3: Door B Close
+        # // 4: Door C Open
+        # // 5: Door C Close
+        # // 6: Door D Open
+        # // 7: Door D Close
+
+        if door == 0:
+            cmd = 0
+
+        elif door == 1:
+            cmd = 2
+
+        elif door == 2:
+            cmd = 4
+
+        elif door == 3:
+            cmd = 6
+
+        else:
+            log.error(f"Invalid door: {door}")
+            return
+
+        if state == False:
+            cmd += 1
+
+        self.client.publish(MainTopic, str(cmd))
 
     def execute(self, device, instruction, payload):
         """
@@ -210,36 +306,17 @@ class communications:
         Message recieved interpretation to update the status of devices
         """
 
-        # Alien and Engineer recieve the same type of messages, compound recieved other types of messages
+        # Check message recieved with all the message types
+        for key in settings.DEVICE_MESSAGES:
 
-        if device == "compound":
+            if data == settings.DEVICE_MESSAGES[key]:
+                # If message recieved identified, perform function according to the type of message
+                func = self.device_functions.get(key)
+                func(device)
 
-            # load the door status from the database
-            status = json.loads(db.get(device))
-
-            # Loop through each type of message to identify the door
-            for key in settings.COMPOUND_MESSAGES:
-
-                if data == settings.DEVICE_MESSAGES[key]:
-                    # Flip status of door if message recieved
-                    status[key] = not status[key]
-                    db.set(device, json.dumps(status))
-                    return
-
-            log.error("Key not found for: " + device)
-
-        else:
-            # Check message recieved with all the message types
-            for key in settings.DEVICE_MESSAGES:
-
-                if data == settings.DEVICE_MESSAGES[key]:
-                    # If message recieved identified, perform function according to the type of message
-                    func = self.device_functions.get(key)
-                    func(device)
-
-                    # log device message interpretation
-                    log.info(device + " status is: " + key)
-                    return
+                # log device message interpretation
+                log.info(device + " status is: " + key)
+                return
 
 
 class commands:
@@ -247,9 +324,9 @@ class commands:
         """
         Class constructor
         """
-        self.comms = communications()
-        thread = threading.Thread(target=self.comms.start)
-        thread.start()
+        # self.comms = communications()
+        # thread = threading.Thread(target=self.comms.start)
+        # thread.start()
 
     def merge_data(self, high_word, low_word):
         """
@@ -266,12 +343,11 @@ class commands:
         Start the communication with the server
         """
 
-        # connected.clear()
         db.set("comms_enabled", 0)
         time.sleep(1)
         db.set("comms_enabled", 1)
 
-        # Create the status dictionaries for the alien engineer and compount
+        # Create the status dictionaries for the alien, engineer
         alien = {
             "moving": False,
             "action": False
@@ -282,11 +358,6 @@ class commands:
             "action": False
         }
 
-        compound = {}
-        for key in settings.COMPOUND_MESSAGES:
-            # Start with all the doors open
-            compound[key] = True
-
         # Create a counter for each device to check their connection status
         db.incr("engineer-counter")
         db.incr("alien-counter")
@@ -295,11 +366,31 @@ class commands:
         # Store the stauses in the database
         db.set("alien", json.dumps(alien))
         db.set("engineer", json.dumps(engineer))
-        db.set("compound", json.dumps(compound))
 
         # Start the communications objects
         self.comms = communications()
-        self.comms.start()
+        self.comms.start_recieveing()
+
+    def device_send(self, device):
+        """
+        Start the communication with the server
+        """
+
+        # Start the communications objects
+        self.comms = communications()
+        self.comms.start_sending_device()
+
+        # Log that communications have started
+        log.info(f"Sending communications have started - {device}")
+
+    def doors_send(self):
+        """
+        Start the communication with the server
+        """
+
+        # Start the communications objects
+        self.comms = communications()
+        self.comms.start_sending_doors()
 
     def move(self, device, distance, angle):
         """
@@ -309,20 +400,10 @@ class commands:
         ```angle``` is a signed float in radians with the relative angle to turn
         """
 
-        # Check current device status stored
-        status = json.loads(db.get(device))
+        # combine angle and distance information in one message
+        payload = self.merge_data(distance, angle)
 
-        # IF device IS NOT moving then send the command
-        if not status["moving"]:
-
-            # combine angle and distance information in one message
-            payload = self.merge_data(distance, angle)
-
-            self.comms.execute(device, "move", payload)
-
-        else:
-
-            log.warning("Device already moving")
+        self.comms.execute(device, "move", payload)
 
     def stop(self, device):
         """
@@ -330,18 +411,8 @@ class commands:
         ```device``` is a string representing the the robot to communicate with
         """
 
-        # Check current device status stored
-        status = json.loads(db.get(device))
-
-        # If device IS moving then send the command
-        if status["moving"]:
-
-            payload = "0"
-            self.comms.execute(device, "stop", payload)
-
-        else:
-
-            log.warning("Device not supposed to be moving")
+        payload = "0"
+        self.comms.execute(device, "stop", payload)
 
     def action(self, device, select):
         """
@@ -363,22 +434,8 @@ class commands:
         3: Forward
         """
 
-        # # Create the mqtt client object
-        # client = mqtt.Client()
-        client = self.comms.client
-
-        # # Set the username and password
-        # client.username_pw_set("student", password="smartPass")
-
-        # # Connect to the server using a specific port with a timeout delay (in seconds)
-        # client.connect(
-        #     "ec2-3-10-235-26.eu-west-2.compute.amazonaws.com", 31415, 60)
-
         # Create your main topic string. Everything else should be fields with values 1-8
         MainTopic = "ALIEN_SELF_ISOLATION-alien/7"
-
-        # # Start the client to enable the above events to happen
-        # client.loop_start()
 
         # Calculate angle threshold based on exponential function
         # threshold_angle = 0.4
@@ -388,55 +445,19 @@ class commands:
         # Turn right
         if direction < (0 - threshold_angle):
             log.info("Turn left")
-            client.publish(MainTopic, str(2))
+            self.comms.client.publish(MainTopic, str(2))
 
         # Turn left
         elif direction > (0 + threshold_angle):
             log.info("Turn right")
-            client.publish(MainTopic, str(1))
+            self.comms.client.publish(MainTopic, str(1))
 
         # Forward
         elif magnitude > threshold_magitude:
             log.info("Forwards")
-            client.publish(MainTopic, str(3))
+            self.comms.client.publish(MainTopic, str(3))
 
         # Stop
         else:
             log.info("Stop")
-            client.publish(MainTopic, str(0))
-
-    def door(self, door, state):
-        client = self.comms.client
-
-        # Create your main topic string. Everything else should be fields with values 1-8
-        MainTopic = "ALIEN_SELF_ISOLATION-compound/7"
-
-        # // 0: Door A Open
-        # // 1: Door A Close
-        # // 2: Door B Open
-        # // 3: Door B Close
-        # // 4: Door C Open
-        # // 5: Door C Close
-        # // 6: Door D Open
-        # // 7: Door D Close
-
-        if door == 0:
-            cmd = 0
-
-        elif door == 1:
-            cmd = 2
-
-        elif door == 2:
-            cmd = 4
-
-        elif door == 3:
-            cmd = 6
-
-        else:
-            log.error(f"Invalid door: {door}")
-            return
-
-        if state == False:
-            cmd += 1
-
-        client.publish(MainTopic, str(cmd))
+            self.comms.client.publish(MainTopic, str(0))
