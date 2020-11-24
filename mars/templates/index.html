@@ -220,16 +220,17 @@
                         </script>
                     </figure>
 
-                    <div class="container has-text-centered" style="position: absolute; width: 100%; bottom: 20px;">
-                        <p id="logic">
-                            {"engineer": {"current_task": 0, "current_marker": 2}, "alien": {"current_marker": 9},
-                            "doors": {"A": true, "B": true, "C": true, "D": true}}
-                        </p>
+                    <div class="container" id="logic_container">
+                        <p id="logic" style="white-space:pre"></p>
 
                         <script>
+                            // Initialise element contents
+                            document.getElementById("logic").innerText = `{\n\t"engineer": {\n\t\t"current_task": 0,\n\t\t"current_marker": 2,\n\t\t"tasks_enabled": 0,\n\t\t"target_route": null\n\t},\n\t"alien": {\n\t\t"current_marker": 9,\n\t\t"enabled": 0,\n\t\t"target_route": null\n\t},\n\t"doors": {\n\t\t"A": true,\n\t\t"B": true,\n\t\t"C": true,\n\t\t"D": false\n\t}\n}`
+
+                            // Update element with new data
                             socket.on("update_logic", function (data) {
                                 markers = JSON.parse(data)
-                                document.getElementById("logic").innerHTML = data
+                                document.getElementById("logic").innerText = JSON.stringify(markers, null, "\t")
                             });
                         </script>
                     </div>
@@ -277,12 +278,31 @@
                                 <button class="button" onclick="reload_video_feed()">Stream</button>
                                 <button class="button" onclick="socket.emit('start_comms')">Comms</button>
                                 <!-- <button class="button" onclick="socket.emit('start_ui_logic')">Connect UI Logic</button> -->
+
                             </div>
                         </div>
                         <div class="column">
                             <h2 class="heading has-text-centered">Engineer Controls</h2>
                             <div class="buttons is-centered has-addons">
-                                <button class="button" disabled>Engineer</button>
+                                <button class="button" disabled>
+                                    <span class="icon" id="status_engineer">
+                                        ❌
+                                    </span>
+                                    <span>Engineer</span>
+                                </button>
+
+                                <script>
+                                    socket.on("status_engineer", function (data) {
+
+                                        element = document.getElementById("status_engineer")
+
+                                        if (data == "connected") {
+                                            element.innerText = "🔗"
+                                        } else {
+                                            element.innerText = "❌"
+                                        }
+                                    });
+                                </script>
                                 <button class="button" onclick="socket.emit('start_engineer')">Start</button>
                                 <button class="button" onclick="socket.emit('stop_engineer')">Stop</button>
                                 <button class="button" onclick="socket.emit('increment_engineer_task')">Next</button>
@@ -295,7 +315,26 @@
                                 ̷̙̤͈̠̗͚͍̬̠̈́̐͒̀͗͝Ċ̶̢̞̮͓̫́̃̀͑̀̊͒o̶̢̬̪̖͖̘̲͕̺̺͚͊́̈͌̈̌̆̇͛͒̍̇͘͜͝n̶̛̤͙͂́̍́̋̊̔̓͗́̒̾͒t̸̯̬̄ŗ̸̪̹̳̞̮̯̟͇̟̮̘̫̳͐͐̕ͅo̸̱̬̗͒̉̐̽̆̔̔̎̽l̶͉̦̗̳̭̯̝͋̆͋͐̑̅̔̔̒̏̒̒̉͘͝ͅş̵̛͎͚͚͉̮͉̑̊́͛̿̑̑͐
                             </h2>
                             <div class="buttons is-centered has-addons">
-                                <button class="button" disabled>Alien</button>
+                                <button class="button" disabled>
+                                    <span class="icon" id="status_alien">
+                                        ❌
+                                    </span>
+                                    <span>Alien</span>
+                                </button>
+
+                                <script>
+                                    socket.on("status_alien", function (data) {
+
+                                        element = document.getElementById("status_alien")
+
+                                        if (data == "connected") {
+                                            element.innerText = "🔗"
+                                        } else {
+                                            element.innerText = "❌"
+                                        }
+                                    });
+                                </script>
+
                                 <button class="button" onclick="socket.emit('start_alien')">Start</button>
                                 <button class="button" onclick="socket.emit('stop_alien')">Stop</button>
                             </div>
@@ -306,9 +345,28 @@
                     <h2 class="heading has-text-centered">Door Controls</h2>
                     <div class="columns">
                         <div class="column">
-                            <div class="buttons is-centered">
-                                <button class="button" onclick="socket.emit('initialise_doors')">Initialise
-                                    Doors</button>
+                            <div class="buttons is-centered has-addons">
+                                <button class="button" disabled>
+                                    <span class="icon" id="status_compound">
+                                        ❌
+                                    </span>
+                                    <span>Doors</span>
+                                </button>
+                                <script>
+                                    socket.on("status_compound", function (data) {
+
+                                        element = document.getElementById("status_compound")
+
+                                        if (data == "connected") {
+                                            element.innerText = "🔗"
+                                        } else {
+                                            element.innerText = "❌"
+                                        }
+                                    });
+                                </script>
+
+                                <button class="button" onclick="socket.emit('initialise_doors')">Initialise</button>
+
                             </div>
                         </div>
                         <div class="column">

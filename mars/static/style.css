@@ -38,3 +38,24 @@ html {
 .table th {
     color: white !important;
 }
+
+.button.is-connected {
+    background-color: deepskyblue !important;
+}
+
+.button.is-disconnected {
+    background-color: red !important;
+}
+
+#logic_container {
+    position: absolute;
+    width: 100%;
+    bottom: 0px;
+    padding: 20px;
+    opacity: 0.3;
+}
+
+#logic_container:hover {
+    opacity: 1;
+    background-color: black;
+}

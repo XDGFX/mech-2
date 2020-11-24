@@ -19,8 +19,6 @@ log = logs.create_log(__name__)
 
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
-cmd = commands()
-
 
 def update_ui():
     """
@@ -40,10 +38,14 @@ def update_ui():
         {
             "engineer": {
                 "current_task": int(r.get("engineer_current_task")),
-                "current_marker": int(r.get("engineer_current_marker"))
+                "current_marker": int(r.get("engineer_current_marker")),
+                "tasks_enabled": int(r.get("engineer_tasks_enabled")),
+                "target_route": r.get("engineer_target_route"),
             },
             "alien": {
-                "current_marker": int(r.get("alien_current_marker"))
+                "current_marker": int(r.get("alien_current_marker")),
+                "enabled": int(r.get("alien_enabled")),
+                "target_route": r.get("alien_target_route"),
             },
             "doors": {
                 "A": doors_state[0],
@@ -73,6 +75,8 @@ class engineer:
         r.set("engineer_current_marker", 2)
 
         r.set("engineer_tasks_enabled", 0)
+
+        r.set("engineer_target_route", "[]")
 
     def engineer_complete_tasks(self):
         """
@@ -104,6 +108,7 @@ class engineer:
             int(r.get("engineer_current_marker")), target_marker)
 
         log.info(f"Engineer working on next task: {target_route}")
+        r.set("engineer_target_route", str(target_route))
 
         reached_target = False
 
@@ -143,6 +148,9 @@ class engineer:
                     target_route.pop(0)
                     reached_marker = True
 
+                    # Update UI route
+                    r.set("engineer_target_route", str(target_route))
+
                 else:
                     # Calculate distance to alien
                     alien_distance, _ = coords.coords().calculate_vector(
@@ -178,6 +186,7 @@ class engineer:
 
                         log.info(
                             f"Engineer working on next task: {target_route}")
+                        r.set("engineer_target_route", str(target_route))
 
                         within_alien_radius = True
 
@@ -221,6 +230,11 @@ class alien:
         # Last known position in the compound
         r.set("alien_enabled", 0)
         r.set("alien_current_marker", 9)
+        r.set("alien_target_route", "[]")
+
+        # Initialise comms object
+        self.cmd = commands()
+        self.cmd.start_comms()
 
     def alien_follow(self):
         """
@@ -247,6 +261,7 @@ class alien:
                 continue
 
             log.info(f"Alien following route: {target_route}")
+            r.set("alien_target_route", str(target_route))
 
             reached_marker = False
 
@@ -280,13 +295,16 @@ class alien:
                     target_route.pop(0)
                     reached_marker = True
 
+                    # Update route in UI
+                    r.set("alien_target_route", str(target_route))
+
                 else:
                     # Only send if the next message is required
                     comms_time_remain = comms_start_time + 1 / settings.COMMSRATE - time.time()
 
                     if comms_time_remain < 0:
                         # Send a command to go to the first marker in the route
-                        cmd.simple_alien_move(magnitude, direction)
+                        self.cmd.simple_alien_move(magnitude, direction)
 
                         comms_start_time = time.time()
 
