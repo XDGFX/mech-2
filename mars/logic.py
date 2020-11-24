@@ -88,6 +88,10 @@ class engineer:
         time.sleep(2 / settings.FRAMERATE)
         r.set("engineer_tasks_enabled", 1)
 
+        # Initialise communication
+        self.cmd = commands()
+        self.cmd.device_send()
+
         while int(r.get("engineer_tasks_enabled")):
             self.next_task()
 
@@ -192,14 +196,14 @@ class engineer:
                         within_alien_radius = True
 
                         # Tell engineer to stop moving
-                        # commands.stop("engineer")
+                        self.cmd.stop("engineer")
 
                     # Only send if the next message is required
                     comms_time_remain = comms_start_time + 1 / settings.COMMSRATE - time.time()
 
                     if comms_time_remain < 0:
                         # Send a command to go to the first marker in the route
-                        # commands.move("engineer", magnitude, direction)
+                        self.cmd.move("engineer", magnitude, direction)
 
                         comms_start_time = time.time()
 
@@ -235,7 +239,7 @@ class alien:
 
         # Initialise comms object
         self.cmd = commands()
-        self.cmd.start_comms()
+        self.cmd.device_send()
 
     def alien_follow(self):
         """

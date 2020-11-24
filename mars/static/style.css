@@ -50,9 +50,11 @@ html {
 #logic_container {
     position: absolute;
     width: 100%;
-    bottom: 0px;
+    height: 100%;
+    bottom: 0;
     padding: 20px;
-    opacity: 0.3;
+    padding-top: 80px;
+    opacity: 0.01;
 }
 
 #logic_container:hover {

@@ -288,7 +288,7 @@ class route:
 
         # Initialise comms object
         self.cmd = commands()
-        self.cmd.start_comms()
+        self.cmd.doors_send()
 
     def doors(self, index, state):
         """
