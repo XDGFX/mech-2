@@ -63,3 +63,6 @@ COMPOUND_MESSAGES = {
     "C": 0b00000011,   # Door C is closed/open
     "D": 0b00000100   # Door D is closed/open
 }
+
+# Unit conversion for Engineer
+DIST_MULTIPLIER = 1
