@@ -12,6 +12,9 @@ char username[] = "student";
 char password[] = "smartPass";
 char topicname[] = "ALIEN_SELF_ISOLATION-alien/7";
 
+const char sendTopic[] = "ALIEN_SELF_ISOLATION-alien/8";
+const char connectedMessage[] = "4";
+
 #define PWM_L1 10
 #define PWM_L2 11
 #define PWM_R1 5
@@ -32,10 +35,10 @@ void setup()
 {
   Serial.begin(9600);
   //
-//  while (!Serial)
-//  {
-//    delay(1000);
-//  }
+  //  while (!Serial)
+  //  {
+  //    delay(1000);
+  //  }
 
   // Set PWM and DIR connections as outputs
   pinMode(PWM_L1, OUTPUT);
@@ -64,6 +67,8 @@ void loop()
 
   //MUST delay to allow ESP8266 WIFI functions to run
   delay(10);
+
+  client.publish(sendTopic, connectedMessage)
 }
 
 void callback(char *topic, byte *payload, unsigned int length)
@@ -99,11 +104,11 @@ void callback(char *topic, byte *payload, unsigned int length)
     analogWrite(PWM_L1, motorPwm);
     analogWrite(PWM_L2, 0);
 
-    analogWrite(PWM_R1, 0);  // 0
+    analogWrite(PWM_R1, 0);        // 0
     analogWrite(PWM_R2, motorPwm); // motorpwm
-    
+
     delay(timeActive);
-    
+
     analogWrite(PWM_L1, 0);
     analogWrite(PWM_R2, 0);
   }
@@ -117,7 +122,7 @@ void callback(char *topic, byte *payload, unsigned int length)
 
     analogWrite(PWM_R1, motorPwm);
     analogWrite(PWM_R2, 0);
-    
+
     delay(timeActive);
 
     analogWrite(PWM_R1, 0);
@@ -133,7 +138,7 @@ void callback(char *topic, byte *payload, unsigned int length)
 
     analogWrite(PWM_R1, 0);
     analogWrite(PWM_R2, motorPwm);
-    
+
     delay(timeForwards);
 
     analogWrite(PWM_L2, 0);
