@@ -39,7 +39,7 @@ def update_ui():
             "engineer": {
                 "current_task": int(r.get("engineer_current_task") or -1),
                 "current_marker": int(r.get("engineer_current_marker") or -1),
-                "current_status": r.get("engineer_current_status"),
+                "current_status": json.loads(r.get("engineer_current_status") or "[]"),
                 "tasks_enabled": int(r.get("engineer_tasks_enabled") or -1),
                 "target_route": r.get("engineer_target_route"),
             },
