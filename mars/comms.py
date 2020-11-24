@@ -6,7 +6,6 @@ Mechatronics 2
 Alberto Guerra Martinuzzi, 2020
 """
 import json
-from logging import logs
 import math
 import time  # This is the library that will allow us to use the sleep function
 
@@ -137,13 +136,11 @@ class communications:
             # Update the elapsed time
             elapsed_time = time.time() - start_time
 
-            time.sleep(0.2)
-
             # Every 5 seconds check the status of the counters, if a number has changed, the device must be connected
-            if elapsed_time > 5:
+            if elapsed_time > 10:
 
                 # Reset the elapsed time counter
-                start_time = elapsed_time
+                start_time = time.time()
 
                 # Check the current count in every device
                 for device in settings.TOPICS:
@@ -158,6 +155,8 @@ class communications:
 
             # Read messages from the server
             self.client.loop(timeout=settings.DATARATE)
+
+            time.sleep(0.2)
 
     def start_sending_device(self):
         # Create the MQTT client object class
