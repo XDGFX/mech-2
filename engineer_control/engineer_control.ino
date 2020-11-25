@@ -7,18 +7,18 @@ char ssid[] = "legacy";
 char pass[] = "";
 char host[] = "ec2-3-10-235-26.eu-west-2.compute.amazonaws.com";
 uint16_t port = 31415;
-char clientid[] = "alien_self_isolation-ALIEN";
+char clientid[] = "alien_self_isolation-ENGINEER";
 char username[] = "student";
 char password[] = "smartPass";
-char topicname[] = "ALIEN_SELF_ISOLATION-alien/7";
+char topicname[] = "ALIEN_SELF_ISOLATION-engineer/7";
 
-const char sendTopic[] = "ALIEN_SELF_ISOLATION-alien/8";
+const char sendTopic[] = "ALIEN_SELF_ISOLATION-engineer/8";
 const char connectedMessage[] = "4";
 
-#define PWM_L1 10
-#define PWM_L2 11
-#define PWM_R1 5
-#define PWM_R2 3
+#define PWM_D1 10
+#define PWM_D2 11
+#define PWM_T1 5
+#define PWM_T2 3
 
 // Variable for PWM motor speed output, and time active
 int motorPwm = 30;
@@ -47,10 +47,10 @@ void setup()
   //  }
 
   // Set PWM and DIR connections as outputs
-  pinMode(PWM_L1, OUTPUT);
-  pinMode(PWM_R1, OUTPUT);
-  pinMode(PWM_L2, OUTPUT);
-  pinMode(PWM_R2, OUTPUT);
+  pinMode(PWM_D1, OUTPUT);
+  pinMode(PWM_D2, OUTPUT);
+  pinMode(PWM_T1, OUTPUT);
+  pinMode(PWM_T2, OUTPUT);
 
   //
   Serial.println("begin wifi");
@@ -79,7 +79,6 @@ void loop()
     client.publish(sendTopic, connectedMessage);
     prevMillis = currentMillis;
   }
-
   currentMillis = millis();
 }
 
@@ -113,63 +112,53 @@ void callback(char *topic, byte *payload, unsigned int length)
   if (payload[0] == '1')
   {
     Serial.println("Turning left");
-    analogWrite(PWM_L1, motorPwm);
-    analogWrite(PWM_L2, 0);
 
-    analogWrite(PWM_R1, 0);        // 0
-    analogWrite(PWM_R2, motorPwm); // motorpwm
+    analogWrite(PWM_T1, 0);        // 0
+    analogWrite(PWM_T2, motorPwm); // motorpwm
 
     delay(timeActive);
 
-    analogWrite(PWM_L1, 0);
-    analogWrite(PWM_R2, 0);
+    analogWrite(PWM_T2, 0);
   }
   // IF DIRECTION IS RIGHT
   // Turn right
   else if (payload[0] == '2')
   {
     Serial.println("Turning right");
-    analogWrite(PWM_L1, 0);
-    analogWrite(PWM_L2, motorPwm);
 
-    analogWrite(PWM_R1, motorPwm);
-    analogWrite(PWM_R2, 0);
+    analogWrite(PWM_T1, motorPwm);
+    analogWrite(PWM_T2, 0);
 
     delay(timeActive);
 
-    analogWrite(PWM_R1, 0);
-    analogWrite(PWM_L2, 0);
+    analogWrite(PWM_T1, 0);
   }
   // IF DIRECTION ~0 AND DISTANCE >0
   // Drive forward
   else if (payload[0] == '3')
   {
     Serial.println("Driving forwards");
-    analogWrite(PWM_L1, 0);
-    analogWrite(PWM_L2, motorPwm);
-
-    analogWrite(PWM_R1, 0);
-    analogWrite(PWM_R2, motorPwm);
+    analogWrite(PWM_D1, 0);
+    analogWrite(PWM_D2, motorPwm);
 
     delay(timeForwards);
 
-    analogWrite(PWM_L2, 0);
-    analogWrite(PWM_R2, 0);
+    analogWrite(PWM_D2, 0);
   }
   // Otherwise, stop
   else if (payload[0] == '0')
   {
-    analogWrite(PWM_L1, 0);
-    analogWrite(PWM_L2, 0);
-    analogWrite(PWM_R1, 0);
-    analogWrite(PWM_R2, 0);
+    analogWrite(PWM_D1, 0);
+    analogWrite(PWM_D2, 0);
+    analogWrite(PWM_T1, 0);
+    analogWrite(PWM_T2, 0);
   }
 }
 //
 //void turn(direction)
 //{
-//  analogWrite(PWM_L1, 255);
-//  analogWrite(PWM_L1, 0);
+//  analogWrite(PWM_D1, 255);
+//  analogWrite(PWM_D1, 0);
 //}
 
 //networking functions
