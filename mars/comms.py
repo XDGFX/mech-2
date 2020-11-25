@@ -80,8 +80,8 @@ class communications:
         data = int(msg.payload.rstrip(b'\x00'))
 
         # log the recieved change in data
-        log.info(msg.topic + " Updated to " +
-                 str(data))
+        log.debug(msg.topic + " Updated to " +
+                  str(data))
 
         # Check the message topic to identify device
         for item in self.channels:
@@ -198,7 +198,7 @@ class communications:
         # set all the doors to initial state
         for index, _ in enumerate(prev_doors_state):
             self.change_door_state(index, prev_doors_state[index])
-            time.sleep(0.5)
+            time.sleep(1)
 
         # Main loop for checking incoming messages in the MQTT server
         # This is a blocking loop, it needs to be placed on a separate thread
@@ -217,6 +217,8 @@ class communications:
                     if doors_state[index] != prev_doors_state[index]:
                         # send message to arduino to change state if door status has changed
                         self.change_door_state(index, doors_state[index])
+
+                        time.sleep(1)
 
                 prev_doors_state = doors_state
 
@@ -326,7 +328,7 @@ class communications:
                 func(device)
 
                 # log device message interpretation
-                log.info(device + " status is: " + key)
+                log.debug(device + " status is: " + key)
                 return
 
 
@@ -459,20 +461,20 @@ class commands:
 
         # Turn right
         if direction < (0 - threshold_angle):
-            log.info("Turn left")
+            log.debug("Turn left")
             self.comms.client.publish(MainTopic, str(2))
 
         # Turn left
         elif direction > (0 + threshold_angle):
-            log.info("Turn right")
+            log.debug("Turn right")
             self.comms.client.publish(MainTopic, str(1))
 
         # Forward
         elif magnitude > threshold_magitude:
-            log.info("Forwards")
+            log.debug("Forwards")
             self.comms.client.publish(MainTopic, str(3))
 
         # Stop
         else:
-            log.info("Stop")
+            log.debug("Stop")
             self.comms.client.publish(MainTopic, str(0))

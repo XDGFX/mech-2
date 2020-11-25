@@ -295,8 +295,35 @@ class route:
         Opens or closes a door identified by `index`.
         `state` is True for open and False for closed.
         """
+
+        # If state is to close a door
+        if not state:
+            # Read current route
+            engineer_target_route = r.get("engineer_target_route")
+            alien_target_route = r.get("alien_target_route")
+
+            try:
+                for door_index, door in enumerate(self.markers_doors):
+
+                    # If first point matches door
+                    if (engineer_target_route[0] in door) or (alien_target_route[0] in door):
+
+                        # If second point is in same door direction
+                        if (engineer_target_route[1] in door) or (alien_target_route[1] in door):
+
+                            # If door index is the same as requested index
+                            if door_index == index:
+
+                                # Return, don't close door
+                                return
+
+            except IndexError:
+                # Route too short
+                pass
+
         doors_state = json.loads(r.get("doors_state"))
         doors_state[index] = state
+
         r.set("doors_state", json.dumps(doors_state))
 
         log.info(f"Command: {state} send to door index: {index}")
@@ -331,7 +358,7 @@ class route:
         doors_state = json.loads(r.get("doors_state"))
         for index in range(4):
 
-            # Check if door is closed
+            # Check if door is open
             if doors_state[index]:
                 continue
 
