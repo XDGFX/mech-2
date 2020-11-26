@@ -3,8 +3,8 @@
 #include <WiFiNINA.h>
 #include <PubSubClient.h>
 
-char ssid[] = "legacy";
-char pass[] = "";
+char ssid[] = "Pixel";
+char pass[] = "BRNIVOZG";
 char host[] = "ec2-3-10-235-26.eu-west-2.compute.amazonaws.com";
 uint16_t port = 31415;
 char clientid[] = "alien_self_isolation-ALIEN";
@@ -22,6 +22,7 @@ const char connectedMessage[] = "4";
 
 // Variable for PWM motor speed output, and time active
 int motorPwm = 30;
+int turnPwm = 30;
 int timeActive = 50;
 int timeForwards = 200;
 
@@ -55,7 +56,7 @@ void setup()
   //
   Serial.println("begin wifi");
   //
-  WiFi.begin(ssid);
+  WiFi.begin(ssid, pass);
   reconnect();
 }
 
@@ -113,11 +114,11 @@ void callback(char *topic, byte *payload, unsigned int length)
   if (payload[0] == '1')
   {
     Serial.println("Turning left");
-    analogWrite(PWM_L1, motorPwm);
+    analogWrite(PWM_L1, turnPwm);
     analogWrite(PWM_L2, 0);
 
     analogWrite(PWM_R1, 0);        // 0
-    analogWrite(PWM_R2, motorPwm); // motorpwm
+    analogWrite(PWM_R2, turnPwm); // motorpwm
 
     delay(timeActive);
 
@@ -130,9 +131,9 @@ void callback(char *topic, byte *payload, unsigned int length)
   {
     Serial.println("Turning right");
     analogWrite(PWM_L1, 0);
-    analogWrite(PWM_L2, motorPwm);
+    analogWrite(PWM_L2, turnPwm);
 
-    analogWrite(PWM_R1, motorPwm);
+    analogWrite(PWM_R1, turnPwm);
     analogWrite(PWM_R2, 0);
 
     delay(timeActive);

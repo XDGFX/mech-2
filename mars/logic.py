@@ -106,8 +106,15 @@ class engineer:
         r.set("engineer_current_marker",
               self.desired_path[int(r.get("engineer_current_task"))])
 
-        target_marker = self.desired_path[int(
-            r.get("engineer_current_task")) + 1]
+        try:
+            target_marker = self.desired_path[int(
+                r.get("engineer_current_task")) + 1]
+        except IndexError:
+            # All tasks are complete!
+            log.info("ALL TASKS COMPLETE. RETURNING HOME.")
+            alien().setup()
+            self.setup()
+            return
 
         target_route = coords.route().pathfinder(
             int(r.get("engineer_current_marker")), target_marker)

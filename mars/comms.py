@@ -269,7 +269,7 @@ class communications:
         self.client.publish(ch, payload)
 
         # Log the data published for debugging
-        log.info("Data published = " + payload + " On channel: " + ch)
+        log.debug("Data published = " + payload + " On channel: " + ch)
 
     def device_move_status(self, device):
         """
