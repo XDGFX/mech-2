@@ -486,3 +486,43 @@ class commands:
         else:
             log.debug("Stop")
             self.comms.client.publish(MainTopic, str(0))
+
+    def simple_engineer_move(self, magnitude, direction):
+        """
+        Simple communication for direct Python to C code for the Arduino.
+
+        Send commands:
+        direction:
+        0: Stop
+        1: Left
+        2: Right
+        3: Forward
+        """
+
+        # Create your main topic string. Everything else should be fields with values 1-8
+        MainTopic = "ALIEN_SELF_ISOLATION-engineer/7"
+
+        # Calculate angle threshold based on exponential function
+        # threshold_angle = 0.4
+        threshold_angle = 0.6 * math.exp(-0.1 * (magnitude + 2)) + 0.1
+        threshold_magitude = 0.1
+
+        # Turn right
+        if direction < (0 - threshold_angle):
+            log.debug("Turn left")
+            self.comms.client.publish(MainTopic, str(2))
+
+        # Turn left
+        elif direction > (0 + threshold_angle):
+            log.debug("Turn right")
+            self.comms.client.publish(MainTopic, str(1))
+
+        # Forward
+        elif magnitude > threshold_magitude:
+            log.debug("Forwards")
+            self.comms.client.publish(MainTopic, str(3))
+
+        # Stop
+        else:
+            log.debug("Stop")
+            self.comms.client.publish(MainTopic, str(0))

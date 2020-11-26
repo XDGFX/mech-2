@@ -65,4 +65,5 @@ COMPOUND_MESSAGES = {
 }
 
 # Unit conversion for Engineer
-DIST_MULTIPLIER = 1
+DIST_MULTIPLIER = 0.6  # convert from aruco units to mm
+MAX_DISTANCE = 600
