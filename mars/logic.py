@@ -149,7 +149,7 @@ class engineer:
                     return
 
                 # If within target radius of target marker
-                if magnitude < settings.MARKER_RADIUS:
+                if magnitude < settings.MARKER_RADIUS_ENGINEER:
                     log.info("Engineer within target marker radius!")
                     log.info("Moving to next marker...")
 
@@ -210,7 +210,7 @@ class engineer:
 
                     if comms_time_remain < 0:
                         # Send a command to go to the first marker in the route
-                        self.cmd.move("engineer", magnitude, direction)
+                        self.cmd.simple_engineer_move(magnitude, direction)
 
                         comms_start_time = time.time()
 

@@ -18,13 +18,13 @@ const char connectedMessage[] = "4";
 #define PWM_D1 10
 #define PWM_D2 11
 #define PWM_T1 5
-#define PWM_T2 3
+#define PWM_T2 6
 
 // Variable for PWM motor speed output, and time active
-int motorPwm = 30;
-int turnPwm = 30;
-int timeActive = 50;
+int motorPwm = 50;
+int turnPwm = 80;
 int timeForwards = 200;
+int timeActive = 10;
 
 // Polling for connection status
 int timeRemain = -1;

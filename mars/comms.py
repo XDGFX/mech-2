@@ -337,6 +337,7 @@ class commands:
         """
         Class constructor
         """
+        self.forward_start_time = time.time()
         # self.comms = communications()
         # thread = threading.Thread(target=self.comms.start)
         # thread.start()
@@ -519,8 +520,14 @@ class commands:
 
         # Forward
         elif magnitude > threshold_magitude:
-            log.debug("Forwards")
+            # Only if time delay has been met
+            time_remain = self.forward_start_time + 1 / settings.FORWARD_RATE - time.time()
+
+            # if time_remain < 0:
+            #     log.debug("Forwards")
             self.comms.client.publish(MainTopic, str(3))
+
+                # self.forward_start_time = time.time()
 
         # Stop
         else:

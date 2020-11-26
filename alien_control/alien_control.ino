@@ -23,7 +23,7 @@ const char connectedMessage[] = "4";
 // Variable for PWM motor speed output, and time active
 int motorPwm = 30;
 int turnPwm = 30;
-int timeActive = 50;
+int timeActive = 40;
 int timeForwards = 200;
 
 // Polling for connection status

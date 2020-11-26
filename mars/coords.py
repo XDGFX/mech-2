@@ -195,8 +195,8 @@ class coords:
         if direction > math.pi:
             direction = -2 * math.pi + direction
 
-        log.debug(
-            f"Vector {source} > {target}: Magnitude = {magnitude:.2f} | Direction = {direction / math.pi * 180:.2f}")
+        # log.debug(
+            # f"Vector {source} > {target}: Magnitude = {magnitude:.2f} | Direction = {direction / math.pi * 180:.2f}")
 
         return magnitude, direction
 
