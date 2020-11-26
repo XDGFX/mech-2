@@ -413,9 +413,17 @@ class commands:
         ```angle``` is a signed float in radians with the relative angle to turn
         """
 
-        # Change magnitude and direction to integers
-        angle = int(math.degrees(angle))
-        distance = int(distance * settings.DIST_MULTIPLIER)
+        # Change the angle from radians to degrees and send the inverse negative angle
+        angle = -int(math.degrees(angle))
+
+        # multiply the distance by a calibration factor to get approximate distance in mm
+        distance = distance * settings.DIST_MULTIPLIER
+
+        if distance > settings.MAX_DISTANCE:
+            distance = settings.MAX_DISTANCE
+        else:
+            # Change the distance to an integer
+            distance = int(distance)
 
         # combine angle and distance information in one message
         payload = self.merge_data(distance, angle)
