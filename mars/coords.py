@@ -195,8 +195,8 @@ class coords:
         if direction > math.pi:
             direction = -2 * math.pi + direction
 
-        log.debug(
-            f"Vector {source} > {target}: Magnitude = {magnitude:.2f} | Direction = {direction / math.pi * 180:.2f}")
+        # log.debug(
+            # f"Vector {source} > {target}: Magnitude = {magnitude:.2f} | Direction = {direction / math.pi * 180:.2f}")
 
         return magnitude, direction
 
@@ -243,10 +243,10 @@ class route:
 
         # Markers which require a check for an open door
         self.markers_doors = [
-            [8, 9],     # Door 1 / A
-            [7, 17],    # Door 2 / B
-            [19, 13],   # Door 3 / C
-            [20, 12]    # Door 4 / D
+            [7, 17],    # Door 0 / A
+            [8, 9],     # Door 1 / B
+            [19, 13],   # Door 2 / C
+            [20, 12]    # Door 3 / D
         ]
 
         # Update shortcuts for alien
@@ -295,8 +295,62 @@ class route:
         Opens or closes a door identified by `index`.
         `state` is True for open and False for closed.
         """
+
+        # If state is to close a door
+        if not state:
+
+            # Try Engineer route first
+            try:
+                # Read current route
+                engineer_target_route = json.loads(
+                    r.get("engineer_target_route") or "[]")
+
+                for door_index, door in enumerate(self.markers_doors):
+
+                    # If first point matches door
+                    if int(r.get("engineer_current_marker") or -1) in door:
+
+                        # If second point is in same door direction
+                        if engineer_target_route[0] in door:
+
+                            # If door index is the same as requested index
+                            if door_index == index:
+
+                                # Return, don't close door
+                                return
+
+            except IndexError:
+                # Route too short
+                pass
+
+            # Then try Alien route
+                # Try Engineer route first
+            try:
+                # Read current route
+                alien_target_route = json.loads(
+                    r.get("alien_target_route") or "[]")
+
+                for door_index, door in enumerate(self.markers_doors):
+
+                    # If first point matches door
+                    if int(r.get("alien_current_marker") or -1) in door:
+
+                        # If second point is in same door direction
+                        if alien_target_route[0] in door:
+
+                            # If door index is the same as requested index
+                            if door_index == index:
+
+                                # Return, don't close door
+                                return
+
+            except IndexError:
+                # Route too short
+                pass
+
         doors_state = json.loads(r.get("doors_state"))
         doors_state[index] = state
+
         r.set("doors_state", json.dumps(doors_state))
 
         log.info(f"Command: {state} send to door index: {index}")
@@ -331,7 +385,7 @@ class route:
         doors_state = json.loads(r.get("doors_state"))
         for index in range(4):
 
-            # Check if door is closed
+            # Check if door is open
             if doors_state[index]:
                 continue
 

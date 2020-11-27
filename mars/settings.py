@@ -7,7 +7,7 @@ Mechatronics 2
 """
 
 # Camera framerate in FPS
-FRAMERATE = 10
+FRAMERATE = 20
 
 # General data transmission rate for UI
 DATARATE = 1
@@ -18,8 +18,12 @@ COMMSRATE = 5
 # Radius within which the Engineer can hear / see the Alien
 DETECTION_RADIUS = 30
 
-# Radius within which the Engineer has reached a marker
+# Radius within which the Alien / Engineer has reached a marker
 MARKER_RADIUS = 5
+MARKER_RADIUS_ENGINEER = 10
+
+# Forward rate for engineer
+FORWARD_RATE = 0.5
 
 # How much aruco positions can change with each update; 1 is 100% the new value
 MARKER_SMOOTHING = 0.3
@@ -63,3 +67,7 @@ COMPOUND_MESSAGES = {
     "C": 0b00000011,   # Door C is closed/open
     "D": 0b00000100   # Door D is closed/open
 }
+
+# Unit conversion for Engineer
+DIST_MULTIPLIER = 0.6  # convert from aruco units to mm
+MAX_DISTANCE = 600

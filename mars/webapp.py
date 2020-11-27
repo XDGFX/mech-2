@@ -100,8 +100,9 @@ def decrement_engineer_task():
 
 @sio.on('start_alien')
 def start_alien():
-    logic.alien().setup()
-    logic.alien().alien_follow()
+    a = logic.alien()
+    a.setup()
+    a.alien_follow()
 
 
 @sio.on('stop_alien')

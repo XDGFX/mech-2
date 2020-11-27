@@ -80,8 +80,8 @@ class communications:
         data = int(msg.payload.rstrip(b'\x00'))
 
         # log the recieved change in data
-        log.info(msg.topic + " Updated to " +
-                 str(data))
+        log.debug(msg.topic + " Updated to " +
+                  str(data))
 
         # Check the message topic to identify device
         for item in self.channels:
@@ -104,6 +104,8 @@ class communications:
 
         It recieves the connection staus of the devices
         """
+        from mars.webapp import ws_send
+
         # Create the MQTT client object class
         self.client = mqtt.Client()
 
@@ -125,6 +127,8 @@ class communications:
         for device in settings.TOPICS:
             prev_count[device] = int(db.get(device + "-counter"))
 
+            ws_send(f"status_{device}", "not connected")
+
         start_time = time.time()
         elapsed_time = 0
 
@@ -137,7 +141,7 @@ class communications:
             elapsed_time = time.time() - start_time
 
             # Every 5 seconds check the status of the counters, if a number has changed, the device must be connected
-            if elapsed_time > 10:
+            if elapsed_time > 5:
 
                 # Reset the elapsed time counter
                 start_time = time.time()
@@ -148,7 +152,10 @@ class communications:
 
                     # If the previous count + 1 is bigger than the new count, the counters have not changed
                     if (int(prev_count[device])+1) > new_count:
-                        log.warning(f"{device} not connected!")
+                        #log.warning(f"{device} not connected!")
+                        ws_send(f"status_{device}", "not connected")
+                    else:
+                        ws_send(f"status_{device}", "connected")
 
                     # Reset the counters
                     prev_count[device] = db.get(device + "-counter")
@@ -170,7 +177,7 @@ class communications:
         self.client.connect(settings.SERVER_IP, settings.PORT, 60)
 
         # Non blocking loop function
-        self.client.loop_start
+        self.client.loop_start()
 
     def start_sending_doors(self):
         # Create the MQTT client object class
@@ -186,11 +193,12 @@ class communications:
         # Log that communications have started
         log.info("Sending communications have started - Doors")
 
-        prev_doors_state = json.load(db.get("doors_state"))
+        prev_doors_state = json.loads(db.get("doors_state"))
 
         # set all the doors to initial state
-        for door in prev_doors_state:
-            self.change_door_state(door, prev_doors_state[door])
+        for index, _ in enumerate(prev_doors_state):
+            self.change_door_state(index, prev_doors_state[index])
+            time.sleep(1)
 
         # Main loop for checking incoming messages in the MQTT server
         # This is a blocking loop, it needs to be placed on a separate thread
@@ -202,11 +210,17 @@ class communications:
             time.sleep(0.2)
 
             # Check the database for the door status, if changed, publish the data
-            doors_state = json.load(db.get("doors_state"))
-            for door in doors_state:
-                if doors_state[door] is not prev_doors_state[door]:
-                    # send message to arduino to change state if door status has changed
-                    self.change_door_state(door, doors_state[door])
+            doors_state = json.loads(db.get("doors_state"))
+
+            if doors_state != prev_doors_state:
+                for index, _ in enumerate(doors_state):
+                    if doors_state[index] != prev_doors_state[index]:
+                        # send message to arduino to change state if door status has changed
+                        self.change_door_state(index, doors_state[index])
+
+                        time.sleep(1)
+
+                prev_doors_state = doors_state
 
     def change_door_state(self, door, state):
 
@@ -255,20 +269,20 @@ class communications:
         self.client.publish(ch, payload)
 
         # Log the data published for debugging
-        log.info("Data published = " + payload + " On channel: " + ch)
+        log.debug("Data published = " + payload + " On channel: " + ch)
 
     def device_move_status(self, device):
         """
         Function to change the "moving" database status of a given device to true
         """
         # Load status from the database
-        status = json.loads(db.get(device))
+        status = json.loads(db.get(f"{device}_current_status"))
 
         # Change moving status to True
         status["moving"] = True
 
         # Save status to database
-        db.set(device, json.dumps(status))
+        db.set(f"{device}_current_status", json.dumps(status))
 
     def device_stop_status(self, device):
         """
@@ -276,13 +290,13 @@ class communications:
         """
 
         # Load status from the database
-        status = json.loads(db.get(device))
+        status = json.loads(db.get(f"{device}_current_status"))
 
         # Change moving status to False
         status["moving"] = False
 
         # Save status to database
-        db.set(device, json.dumps(status))
+        db.set(f"{device}_current_status", json.dumps(status))
 
     def device_action_status(self, device):
         """
@@ -314,7 +328,7 @@ class communications:
                 func(device)
 
                 # log device message interpretation
-                log.info(device + " status is: " + key)
+                log.debug(device + " status is: " + key)
                 return
 
 
@@ -323,6 +337,7 @@ class commands:
         """
         Class constructor
         """
+        self.forward_start_time = time.time()
         # self.comms = communications()
         # thread = threading.Thread(target=self.comms.start)
         # thread.start()
@@ -363,14 +378,14 @@ class commands:
         db.incr("compound-counter")
 
         # Store the stauses in the database
-        db.set("alien", json.dumps(alien))
-        db.set("engineer", json.dumps(engineer))
+        db.set("alien_current_status", json.dumps(alien))
+        db.set("engineer_current_status", json.dumps(engineer))
 
         # Start the communications objects
         self.comms = communications()
         self.comms.start_recieveing()
 
-    def device_send(self, device):
+    def device_send(self):
         """
         Start the communication with the server
         """
@@ -380,7 +395,7 @@ class commands:
         self.comms.start_sending_device()
 
         # Log that communications have started
-        log.info(f"Sending communications have started - {device}")
+        log.info(f"Sending communications have started")
 
     def doors_send(self):
         """
@@ -398,6 +413,18 @@ class commands:
         ```distance``` is a positive integer with the distance (mm) to move
         ```angle``` is a signed float in radians with the relative angle to turn
         """
+
+        # Change the angle from radians to degrees and send the inverse negative angle
+        angle = -int(math.degrees(angle))
+
+        # multiply the distance by a calibration factor to get approximate distance in mm
+        distance = distance * settings.DIST_MULTIPLIER
+
+        if distance > settings.MAX_DISTANCE:
+            distance = settings.MAX_DISTANCE
+        else:
+            # Change the distance to an integer
+            distance = int(distance)
 
         # combine angle and distance information in one message
         payload = self.merge_data(distance, angle)
@@ -443,20 +470,66 @@ class commands:
 
         # Turn right
         if direction < (0 - threshold_angle):
-            log.info("Turn left")
+            log.debug("Turn left")
             self.comms.client.publish(MainTopic, str(2))
 
         # Turn left
         elif direction > (0 + threshold_angle):
-            log.info("Turn right")
+            log.debug("Turn right")
             self.comms.client.publish(MainTopic, str(1))
 
         # Forward
         elif magnitude > threshold_magitude:
-            log.info("Forwards")
+            log.debug("Forwards")
             self.comms.client.publish(MainTopic, str(3))
 
         # Stop
         else:
-            log.info("Stop")
+            log.debug("Stop")
+            self.comms.client.publish(MainTopic, str(0))
+
+    def simple_engineer_move(self, magnitude, direction):
+        """
+        Simple communication for direct Python to C code for the Arduino.
+
+        Send commands:
+        direction:
+        0: Stop
+        1: Left
+        2: Right
+        3: Forward
+        """
+
+        # Create your main topic string. Everything else should be fields with values 1-8
+        MainTopic = "ALIEN_SELF_ISOLATION-engineer/7"
+
+        # Calculate angle threshold based on exponential function
+        # threshold_angle = 0.4
+        threshold_angle = 0.6 * math.exp(-0.1 * (magnitude + 2)) + 0.1
+        threshold_magitude = 0.1
+
+        # Turn right
+        if direction < (0 - threshold_angle):
+            log.debug("Turn left")
+            self.comms.client.publish(MainTopic, str(2))
+
+        # Turn left
+        elif direction > (0 + threshold_angle):
+            log.debug("Turn right")
+            self.comms.client.publish(MainTopic, str(1))
+
+        # Forward
+        elif magnitude > threshold_magitude:
+            # Only if time delay has been met
+            time_remain = self.forward_start_time + 1 / settings.FORWARD_RATE - time.time()
+
+            # if time_remain < 0:
+            #     log.debug("Forwards")
+            self.comms.client.publish(MainTopic, str(3))
+
+                # self.forward_start_time = time.time()
+
+        # Stop
+        else:
+            log.debug("Stop")
             self.comms.client.publish(MainTopic, str(0))
