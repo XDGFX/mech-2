@@ -279,11 +279,6 @@ class route:
             True        # Door 4 / D
         ]))
 
-        self.doors(0, True)
-        self.doors(1, True)
-        self.doors(2, True)
-        self.doors(3, True)
-
         update_ui()
 
         # Initialise comms object
