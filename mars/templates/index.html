@@ -224,9 +224,6 @@
                         <p id="logic" style="white-space:pre"></p>
 
                         <script>
-                            // Initialise element contents
-                            document.getElementById("logic").innerText = `{\n\t"engineer": {\n\t\t"current_task": 0,\n\t\t"current_marker": 2,\n\t\t"tasks_enabled": 0,\n\t\t"target_route": null\n\t},\n\t"alien": {\n\t\t"current_marker": 9,\n\t\t"enabled": 0,\n\t\t"target_route": null\n\t},\n\t"doors": {\n\t\t"A": true,\n\t\t"B": true,\n\t\t"C": true,\n\t\t"D": false\n\t}\n}`
-
                             // Update element with new data
                             socket.on("update_logic", function (data) {
                                 markers = JSON.parse(data)
