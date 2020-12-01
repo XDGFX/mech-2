@@ -52,7 +52,6 @@ class camera:
 
         # Load the ArUco Dictionary Dictionary 4x4_50 and set the detection parameters
         self.aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
-        # pa = aruco.DetectorParameters_create()
 
     def generate(self):
         """
@@ -66,6 +65,7 @@ class camera:
             # Save start time to synchronise framerate
             start_time = time.time()
 
+            # Toggle to allow connection to a USB camera
             if os.environ.get("REAL_CAM"):
                 try:
                     _, frame = cv2.VideoCapture(0).read()
@@ -85,9 +85,6 @@ class camera:
                 # Convert to openCV compatible image
                 frame = np.asarray(bytearray(resp.read()), dtype="uint8")
                 frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-
-            # # Convert the image from the camera to Gray scale
-            # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
             # Run the detection function
             corners, ids, rP = aruco.detectMarkers(frame, self.aruco_dict)

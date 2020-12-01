@@ -26,9 +26,11 @@ r = redis.Redis(host='localhost', port=6379,
 
 class coords:
     def __init__(self):
+        num_markers = 21
+
+        # --- SQLite was replaced with Redis for greater performance
         # Initialise markers database
         # self.db_file = os.path.join("mars", "cam_data", "markers.db")
-        num_markers = 21
 
         # with sqlite3.connect(self.db_file) as conn:
         #     cursor = conn.cursor()
@@ -97,16 +99,7 @@ class coords:
             # The camera has accidentally detected a marker we're not using, discard
             return
 
-        # with redis.Redis(host='localhost', port=6379, db=0, decode_responses=True) as r:
         r.set(index, json.dumps([x_pos, y_pos, yaw]))
-
-        # with sqlite3.connect(self.db_file) as conn:
-        #     cursor = conn.cursor()
-
-        #     query = "REPLACE INTO markers (marker, x, y, a) VALUES (?, ?, ?, ?)"
-        #     cursor.execute(query, (index, x_pos, y_pos, yaw))
-
-        #     conn.commit()
 
         # Only send updated marker positions at required polling interval
         end_time = time.time()
@@ -128,14 +121,6 @@ class coords:
                 index = entity
             else:
                 index = self.ids[entity]
-
-            # with sqlite3.connect(self.db_file) as conn:
-            #     cursor = conn.cursor()
-
-            #     query = "SELECT x, y, a FROM markers WHERE marker = ?"
-            #     cursor.execute(query, (index,))
-
-            #     rows = cursor.fetchone()
 
             try:
                 marker = json.loads(r.get(index))
@@ -319,7 +304,6 @@ class route:
                 pass
 
             # Then try Alien route
-                # Try Engineer route first
             try:
                 # Read current route
                 alien_target_route = json.loads(
@@ -349,8 +333,6 @@ class route:
         r.set("doors_state", json.dumps(doors_state))
 
         log.info(f"Command: {state} send to door index: {index}")
-
-        # self.cmd.door(index, state)
 
         update_ui()
 

@@ -3,6 +3,7 @@
 #include <WiFiNINA.h>
 #include <PubSubClient.h>
 
+// Settings for WiFi and MQTT connection
 char ssid[] = "Pixel";
 char pass[] = "BRNIVOZG";
 char host[] = "ec2-3-10-235-26.eu-west-2.compute.amazonaws.com";
@@ -12,9 +13,11 @@ char username[] = "student";
 char password[] = "smartPass";
 char topicname[] = "ALIEN_SELF_ISOLATION-alien/7";
 
+// Settings for connection status polling
 const char sendTopic[] = "ALIEN_SELF_ISOLATION-alien/8";
 const char connectedMessage[] = "4";
 
+// Physical output pins for motors
 #define PWM_L1 10
 #define PWM_L2 11
 #define PWM_R1 5
@@ -41,11 +44,6 @@ PubSubClient client(host, port, callback, wificlient);
 void setup()
 {
   Serial.begin(9600);
-  //
-  //  while (!Serial)
-  //  {
-  //    delay(1000);
-  //  }
 
   // Set PWM and DIR connections as outputs
   pinMode(PWM_L1, OUTPUT);
@@ -53,9 +51,8 @@ void setup()
   pinMode(PWM_L2, OUTPUT);
   pinMode(PWM_R2, OUTPUT);
 
-  //
-  Serial.println("begin wifi");
-  //
+  Serial.println("Begin WiFi");
+
   WiFi.begin(ssid, pass);
   reconnect();
 }
@@ -63,18 +60,19 @@ void setup()
 void loop()
 {
 
-  //reconnect if connection is lost
+  // Reconnect if connection is lost
   if (!client.connected() && WiFi.status() == 3)
   {
     reconnect();
   }
 
-  //maintain MQTT connection
+  // Maintain MQTT connection
   client.loop();
 
-  //MUST delay to allow ESP8266 WIFI functions to run
+  // Delay to allow WiFi functions to run
   delay(10);
 
+  // Publish connected status at required polling interval
   if ((currentMillis - prevMillis) >= timeInterval)
   {
     client.publish(sendTopic, connectedMessage);
@@ -84,32 +82,25 @@ void loop()
   currentMillis = millis();
 }
 
+// Callback upon message received
 void callback(char *topic, byte *payload, unsigned int length)
 {
-  //Print out some debugging info
+  // Debug info
   Serial.println("Callback update.");
 
   for (int i = 0; i < length; i++)
   {
     Serial.print((char)payload[i]);
   }
+
   Serial.println();
 
-  // if (payload[0] == '1')
-  // {
-  //   Serial.print('Oyy');
-  // }
-
-  // payload[0] is the direction:
+  // payload[0] is the message:
   // 0: Straight
   // 1: Left
   // 2: Right
+  // 3: Stop
 
-  // payload[1] is the distance:
-  // 0: Stop
-  // 1: Go
-
-  // IF DIRECTION IS LEFT
   // Turn left
   if (payload[0] == '1')
   {
@@ -125,7 +116,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     analogWrite(PWM_L1, 0);
     analogWrite(PWM_R2, 0);
   }
-  // IF DIRECTION IS RIGHT
+
   // Turn right
   else if (payload[0] == '2')
   {
@@ -141,7 +132,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     analogWrite(PWM_R1, 0);
     analogWrite(PWM_L2, 0);
   }
-  // IF DIRECTION ~0 AND DISTANCE >0
+  
   // Drive forward
   else if (payload[0] == '3')
   {
@@ -157,6 +148,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     analogWrite(PWM_L2, 0);
     analogWrite(PWM_R2, 0);
   }
+
   // Otherwise, stop
   else if (payload[0] == '0')
   {
@@ -166,40 +158,32 @@ void callback(char *topic, byte *payload, unsigned int length)
     analogWrite(PWM_R2, 0);
   }
 }
-//
-//void turn(direction)
-//{
-//  analogWrite(PWM_L1, 255);
-//  analogWrite(PWM_L1, 0);
-//}
 
-//networking functions
-
+// Networking functions
 void reconnect()
 {
-
-  //attempt to connect to the wifi if connection is lost
+  // Attempt to connect to the wifi if connection is lost
   if (WiFi.status() != WL_CONNECTED)
   {
-    //debug printing
+    // Debug info
     Serial.print("Connecting to ");
     Serial.println(ssid);
 
-    //loop while we wait for connection
+    // Loop while we wait for connection
     while (WiFi.status() != WL_CONNECTED)
     {
       delay(500);
       Serial.print(".");
     }
 
-    //print out some more debug once connected
+    // Arduino is now connected
     Serial.println("");
     Serial.println("WiFi connected");
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
   }
 
-  //make sure we are connected to WIFI before attemping to reconnect to MQTT
+  // Ensure we are connected to WIFI before attemping to reconnect to MQTT
   if (WiFi.status() == WL_CONNECTED)
   {
     // Loop until we're reconnected to the MQTT server
@@ -207,14 +191,14 @@ void reconnect()
     {
       Serial.print("Attempting MQTT connection...");
 
-      //if connected, subscribe to the topic(s) we want to be notified about
+      // If connected, subscribe to the topic(s) we want to be notified about
       if (client.connect(clientid, username, password))
       {
         Serial.print("\tMTQQ Connected");
         client.subscribe(topicname);
       }
 
-      //otherwise print failed for debugging
+      // Otherwise print failed for debugging
       else
       {
         Serial.println("\tFailed.");

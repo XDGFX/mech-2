@@ -3,7 +3,7 @@
 The communications file to send and recieve data from embedded robots
 Mechatronics 2
 
-Alberto Guerra Martinuzzi, 2020
+~ Alberto Guerra Martinuzzi, 2020
 """
 import json
 import math

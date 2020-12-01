@@ -4,6 +4,7 @@ Storage of common settings.
 
 Mechatronics 2
 ~ Callum Morrison, 2020
+~ Alberto Guerra Martinuzzi, 2020
 """
 
 # Camera framerate in FPS
@@ -53,21 +54,20 @@ DATA_CHANNELS = {
 
 # Messages from the alien/engineer
 DEVICE_MESSAGES = {
-    "connected": 0b000000100,   # status of device
-    "stopped": 0b000000001,   # Device is not moving
-    "moving":  0b000000010,   # Device is moving
-    "action":  0b000000011    # Customizable action
-
+    "connected": 0b000000100,   # Status of device
+    "stopped": 0b000000001,     # Device is not moving
+    "moving":  0b000000010,     # Device is moving
+    "action":  0b000000011      # Customizable action
 }
 
-# messages recieved from the compound
+# Messages recieved from the compound
 COMPOUND_MESSAGES = {
-    "A": 0b00000001,   # Door A is closed/open
-    "B": 0b00000010,   # Door B is closed/open
-    "C": 0b00000011,   # Door C is closed/open
-    "D": 0b00000100   # Door D is closed/open
+    "A": 0b00000001,            # Door A is closed/open
+    "B": 0b00000010,            # Door B is closed/open
+    "C": 0b00000011,            # Door C is closed/open
+    "D": 0b00000100             # Door D is closed/open
 }
 
 # Unit conversion for Engineer
-DIST_MULTIPLIER = 0.6  # convert from aruco units to mm
+DIST_MULTIPLIER = 0.6           # Convert from aruco units to mm
 MAX_DISTANCE = 300

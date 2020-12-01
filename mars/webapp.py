@@ -29,6 +29,7 @@ cam = cam.camera()
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
 
+# --- INITIALISE WEBSERVER ---
 def serve():
     sio.run(app, host="0.0.0.0")
 

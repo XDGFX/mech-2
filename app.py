@@ -15,7 +15,7 @@ from mars import webapp
 
 load_dotenv()
 
-
+# Allow different environments to test different functions
 if os.environ.get("ENVIRONMENT") == "PRODUCTION":
     webapp.start_server()
 

@@ -116,6 +116,7 @@ class engineer:
             self.setup()
             return
 
+        # Find initial target route
         target_route = coords.route().pathfinder(
             int(r.get("engineer_current_marker")), target_marker)
 
@@ -126,6 +127,7 @@ class engineer:
 
         within_alien_radius = False
 
+        # Loop while the target location has not been reached
         while not reached_target:
 
             reached_marker = False

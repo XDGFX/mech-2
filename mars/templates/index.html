@@ -2,14 +2,17 @@
 <html>
 
 <head>
+    <!-- Load all external styles first -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
     <link rel="stylesheet" href='/static/style.css'>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"
-        integrity="sha512-v8ng/uGxkge3d1IJuEo6dJP8JViyvms0cly9pnbfRxT6/31c3dRWxIiwGnMSWwZjHKOuY3EVmijs7k1jz/9bLA=="
-        crossorigin="anonymous"></script>
     <script defer src="https://use.fontawesome.com/releases/v5.14.0/js/all.js"></script>
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Goldman&display=swap" rel="stylesheet">
+
+    <!-- Socket.io for websocket communication -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"
+        integrity="sha512-v8ng/uGxkge3d1IJuEo6dJP8JViyvms0cly9pnbfRxT6/31c3dRWxIiwGnMSWwZjHKOuY3EVmijs7k1jz/9bLA=="
+        crossorigin="anonymous"></script>
 
 
     <!-- SOCKET.IO INITIALISATION -->
@@ -27,16 +30,18 @@
 
 <body>
 
+    <!-- All body content -->
     <section class="section">
 
         <h1 class="title has-text-centered">SATELLITE LIVE FEED</h1>
 
         <div class="columns">
+            <!-- Markers -->
             <div class="column is-narrow">
 
                 <h2 class="heading has-text-centered">Marker Positions</h2>
 
-                <!-- MARKERS TABLE -->
+                <!-- Markers table -->
                 <div id="markers_container">
                     <table class="table has-text-centered" style="width: 320px;">
                         <thead>
@@ -208,12 +213,15 @@
             </div>
             <div class="column">
 
-                <!-- VIDEO FEED -->
+                <!-- Video live feed -->
                 <div class="container">
                     <figure class="image is-16by9">
                         <img src="static/static.png" id="video_feed">
                         <script type="text/javascript">
                             function reload_video_feed() {
+                                `
+                                Refreshes video element on page to reconnect to feed
+                                `
                                 var d = new Date();
                                 document.getElementById("video_feed").src = "/video_feed?a=" + d.getTime();
                             }
@@ -224,18 +232,21 @@
                         <p id="logic" style="white-space:pre"></p>
 
                         <script>
-                            // Update element with new data
                             socket.on("update_logic", function (data) {
+                                `
+                                Update element with new data
+                                `
                                 markers = JSON.parse(data)
                                 document.getElementById("logic").innerText = JSON.stringify(markers, null, "\t")
                             });
                         </script>
                     </div>
 
+                    <!-- Livestream aesthetics -->
                     <img src="static/mars-small.png" style="position: absolute; top: -70px; right: -100px;">
                     <img src="static/live.png" style="position: absolute; top: 25px; left: 25px;">
 
-                    <!-- MISSION TIMER -->
+                    <!-- Mission timer -->
                     <p id="timer" style="position: absolute; top: 30px; left: 100px;"></p>
 
                     <script>
@@ -265,7 +276,7 @@
                     </script>
                 </div>
 
-                <!-- CONTROLS -->
+                <!-- Controls -->
                 <div class="container">
                     <div class="columns">
                         <div class="column">
@@ -275,9 +286,12 @@
                                 <button class="button" onclick="reload_video_feed()">Stream</button>
                                 <button class="button" onclick="socket.emit('start_comms')">Comms</button>
                                 <!-- <button class="button" onclick="socket.emit('start_ui_logic')">Connect UI Logic</button> -->
-
                             </div>
                         </div>
+
+                        <!-- If you were looking for an easier egg... here it is! -->
+                        <!-- 🥚 -->
+
                         <div class="column">
                             <h2 class="heading has-text-centered">Engineer Controls</h2>
                             <div class="buttons is-centered has-addons">
@@ -290,7 +304,9 @@
 
                                 <script>
                                     socket.on("status_engineer", function (data) {
-
+                                        `
+                                        Update connection status of the Engineer
+                                        `
                                         element = document.getElementById("status_engineer")
 
                                         if (data == "connected") {
@@ -321,7 +337,9 @@
 
                                 <script>
                                     socket.on("status_alien", function (data) {
-
+                                        `
+                                        Update connection status of the Alien
+                                        `
                                         element = document.getElementById("status_alien")
 
                                         if (data == "connected") {
@@ -351,7 +369,9 @@
                                 </button>
                                 <script>
                                     socket.on("status_compound", function (data) {
-
+                                        `
+                                        Update connection status of the compound
+                                        `
                                         element = document.getElementById("status_compound")
 
                                         if (data == "connected") {
@@ -436,19 +456,9 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
-
-
-
-
     </section>
-
-
-
-
 </body>
-
 
 </html>
