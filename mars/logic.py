@@ -190,9 +190,13 @@ class engineer:
                             continue
 
                         # Check if new route is in the same direction, or a new direction
-                        if target_route[1] == new_target_route[1]:
-                            # Continue in same direction; remove the first element to prevent backtracking
-                            new_target_route.pop(0)
+                        try:
+                            if target_route[1] == new_target_route[1]:
+                                # Continue in same direction; remove the first element to prevent backtracking
+                                new_target_route.pop(0)
+                        except IndexError:
+                            # Only one marker left in the route
+                            pass
 
                         target_route = new_target_route
 

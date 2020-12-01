@@ -16,7 +16,7 @@ DATARATE = 1
 COMMSRATE = 5
 
 # Radius within which the Engineer can hear / see the Alien
-DETECTION_RADIUS = 30
+DETECTION_RADIUS = 80
 
 # Radius within which the Alien / Engineer has reached a marker
 MARKER_RADIUS = 5

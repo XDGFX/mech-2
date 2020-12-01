@@ -21,8 +21,8 @@ const char connectedMessage[] = "4";
 #define PWM_T2 6
 
 // Variable for PWM motor speed output, and time active
-int motorPwm = 50;
-int turnPwm = 80;
+int motorPwm = 60;
+int turnPwm = 90;
 int timeForwards = 200;
 int timeActive = 10;
 
