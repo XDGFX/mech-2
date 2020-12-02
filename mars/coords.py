@@ -169,11 +169,11 @@ class coords:
         except ZeroDivisionError:
             direction += math.pi / 2
 
-        # If delta_y is positive, angle correction by adding pi
+        # If delta_y is positive, angle correction by subtracting pi
         if delta_y > 0:
             direction -= math.pi
 
-        # Manual angle correction
+        # Manual angle correction for > 360 degrees
         direction = (math.pi - direction) % (2 * math.pi)
 
         # Convert to +/- pi
