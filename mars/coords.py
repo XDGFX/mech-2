@@ -237,17 +237,9 @@ class route:
         # Update shortcuts for alien
         self.allowed_routes_alien = deepcopy(self.allowed_routes)
 
-        self.allowed_routes_alien[4].append(17)
-        self.allowed_routes_alien[17].append(4)
-
-        self.allowed_routes_alien[17].append(18)
-        self.allowed_routes_alien[18].append(17)
-
-        self.allowed_routes_alien[18].append(10)
-        self.allowed_routes_alien[10].append(18)
-
-        self.allowed_routes_alien[16].append(2)
-        self.allowed_routes_alien[2].append(16)
+        for vent in [[4, 17], [17, 18], [18, 10], [16, 2]]:
+            self.allowed_routes_alien[vent[0]].append(vent[1])
+            self.allowed_routes_alien[vent[1]].append(vent[0])
 
         # self.weights = [
         #     0,  # Reserved for engineer
