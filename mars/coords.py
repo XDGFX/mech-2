@@ -237,7 +237,14 @@ class route:
         # Update shortcuts for alien
         self.allowed_routes_alien = deepcopy(self.allowed_routes)
 
-        for vent in [[4, 17], [17, 18], [18, 10], [16, 2]]:
+        vents = [
+            [4, 17],
+            [17, 18],
+            [18, 10],
+            [16, 2]
+        ]
+
+        for vent in vents:
             self.allowed_routes_alien[vent[0]].append(vent[1])
             self.allowed_routes_alien[vent[1]].append(vent[0])
 
